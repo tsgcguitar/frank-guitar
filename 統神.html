@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>皮卡丘跳格子：端火鍋大冒險 (修正版)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            touch-action: none;
+            user-select: none; /* 防止選取文字 */
+        }
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            width: 800px;
+            height: 450px;
+            background: #000;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none; /* 移除點擊時的藍框 */
+        }
+        #uiLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #scoreBoard {
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 0px #000;
+            position: absolute;
+            left: 20px;
+            top: 20px;
+        }
+        #levelText {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 1px 1px 0px #000;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            border: 5px solid #333;
+            pointer-events: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 80%;
+            max-width: 500px;
+        }
+
+        h1 { margin: 0 0 15px 0; color: #d32f2f; font-size: 32px; }
+        p { margin: 5px 0 20px 0; color: #555; font-size: 16px; }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .char-card {
+            background: #f0f0f0;
+            border: 3px solid #ccc;
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .char-card:hover { transform: scale(1.05); border-color: #ff9800; background: #fff3e0; }
+        .char-card.selected { border-color: #d32f2f; background: #ffebee; box-shadow: 0 0 10px rgba(211, 47, 47, 0.5); }
+        .char-icon { width: 40px; height: 40px; margin-bottom: 5px; border-radius: 5px; }
+
+        button {
+            background-color: #d32f2f;
+            border: none;
+            padding: 12px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 4px 0 #b71c1c;
+        }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
+
+        .hidden { display: none !important; }
+        .god-mode { color: red !important; animation: shake 0.5s infinite; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas" width="800" height="450" tabindex="0"></canvas>
+    
+    <div id="uiLayer">
+        <div id="scoreBoard">Score: 0</div>
+        <div id="levelText">Level 1: 平原</div>
+    </div>
+
+    <div id="selectScreen" class="screen">
+        <h1>請選擇角色</h1>
+        <p style="font-size:14px; color:#666;">(遊玩時請關閉中文輸入法以確保空白鍵靈敏)</p>
+        <div class="char-grid">
+            <div class="char-card" onclick="selectCharacter('pikachu', this)">
+                <div class="char-icon" style="background:#FFD700;"></div>
+                <span>皮卡丘</span>
+            </div>
+            <div class="char-card" onclick="selectCharacter('charmander', this)">
+                <div class="char-icon" style="background:#FF4500;"></div>
+                <span>小火龍</span>
+            </div>
+            <div class="char-card" onclick="selectCharacter('gengar', this)">
+                <div class="char-icon" style="background:#4B0082;"></div>
+                <span>梗鬼</span>
+            </div>
+            <div class="char-card" onclick="selectCharacter('chikorita', this)">
+                <div class="char-icon" style="background:#90EE90;"></div>
+                <span>菊草葉</span>
+            </div>
+        </div>
+        <button id="startBtn" disabled>開始冒險</button>
+    </div>
+
+    <div id="gameOverScreen" class="screen hidden">
+        <h1 id="goTitle">哎呀！上班玩電腦喔！</h1>
+        <p id="finalScore">得分: 0</p>
+        <button id="restartBtn">再玩一次</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreBoard = document.getElementById('scoreBoard');
+    const levelText = document.getElementById('levelText');
+    const selectScreen = document.getElementById('selectScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let isPlaying = false;
+    let score = 0;
+    let frames = 0;
+    let gameSpeed = 5;
+    let animationId;
+    let currentLevel = 1;
+    let selectedCharId = null;
+
+    // 角色繪製
+    const charDrawers = {
+        pikachu: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#FFD700'; ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = '#FF0000'; ctx.beginPath(); ctx.arc(x+5, y+25, 4, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(x+35, y+25, 4, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(x-2, y-10); ctx.lineTo(x-5, y-15); ctx.lineTo(x+2, y-5); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(x+42, y-10); ctx.lineTo(x+45, y-15); ctx.lineTo(x+38, y-5); ctx.fill();
+            ctx.fillRect(x+10, y+15, 5, 5); ctx.fillRect(x+25, y+15, 5, 5);
+        },
+        charmander: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#FF4500'; ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = '#FFE4B5'; ctx.fillRect(x+10, y+20, 20, 20);
+            ctx.fillStyle = (frames % 20 < 10) ? '#FF0000' : '#FFFF00';
+            ctx.beginPath(); ctx.moveTo(x, y+30); ctx.quadraticCurveTo(x-15, y+20, x-5, y+10); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.fillRect(x+10, y+10, 5, 5); ctx.fillRect(x+25, y+10, 5, 5);
+        },
+        gengar: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#4B0082'; ctx.beginPath(); ctx.arc(x+20, y+20, 20, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(x+5, y+5); ctx.lineTo(x, y-10); ctx.lineTo(x+15, y+2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(x+35, y+5); ctx.lineTo(x+40, y-10); ctx.lineTo(x+25, y+2); ctx.fill();
+            ctx.fillStyle = '#FF0000'; ctx.beginPath(); ctx.arc(x+12, y+18, 5, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(x+28, y+18, 5, 0, Math.PI*2); ctx.fill();
+        },
+        chikorita: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#90EE90'; ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = '#228B22'; ctx.beginPath(); ctx.ellipse(x+30, y-10, 15, 8, Math.PI/4, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.fillRect(x+8, y+15, 5, 5); ctx.fillRect(x+28, y+15, 5, 5);
+        }
+    };
+
+    const player = {
+        x: 100, y: 300, width: 40, height: 40, dy: 0, jumpForce: 13, gravity: 0.7, grounded: false,
+        draw: function() {
+            if (charDrawers[selectedCharId]) charDrawers[selectedCharId](ctx, this.x, this.y, this.width, this.height);
+            else { ctx.fillStyle = 'red'; ctx.fillRect(this.x, this.y, this.width, this.height); }
+        },
+        update: function() {
+            this.y += this.dy;
+            if (this.y + this.height < canvas.height) { this.dy += this.gravity; this.grounded = false; }
+            else if (this.y > canvas.height + 50) gameOver();
+        },
+        jump: function() {
+            if (this.grounded) {
+                this.dy = -this.jumpForce;
+                this.grounded = false;
+                playTone(400, 'square', 0.1);
+            }
+        }
+    };
+
+    let platforms = [];
+    class Platform {
+        constructor(x, w) {
+            this.x = x; this.y = 350; this.width = w; this.height = canvas.height - this.y;
+        }
+        draw() {
+            if (currentLevel === 1) {
+                ctx.fillStyle = '#65c368'; ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(this.x, this.y + 10, this.width, this.height - 10);
+                ctx.fillStyle = '#4caf50'; ctx.fillRect(this.x, this.y, this.width, 10);
+            } else {
+                ctx.fillStyle = '#ddd'; ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = '#999'; ctx.lineWidth = 2; ctx.beginPath();
+                for(let i=0; i<this.width; i+=40) { ctx.moveTo(this.x + i, this.y); ctx.lineTo(this.x + i - 20, this.y + this.height); }
+                ctx.stroke();
+                ctx.fillStyle = '#555'; ctx.fillRect(this.x, this.y + this.height - 10, this.width, 10);
+            }
+        }
+        update() { this.x -= gameSpeed; }
+    }
+
+    function selectCharacter(id, element) {
+        selectedCharId = id;
+        document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+        element.classList.add('selected');
+        startBtn.disabled = false;
+        startBtn.innerText = "開始: " + element.querySelector('span').innerText;
+    }
+
+    function initGame() {
+        if (!selectedCharId) return;
+        platforms = [new Platform(0, 1000)];
+        score = 0; frames = 0; currentLevel = 1; gameSpeed = 5;
+        player.y = 200; player.dy = 0;
+        
+        scoreBoard.innerText = "Score: 0";
+        levelText.innerText = "Level 1: 平原";
+        levelText.classList.remove('god-mode');
+        
+        isPlaying = true;
+        selectScreen.classList.add('hidden');
+        gameOverScreen.classList.add('hidden');
+        
+        // --- 關鍵修正：確保按鈕失去焦點，Canvas 取得焦點 ---
+        startBtn.blur(); 
+        restartBtn.blur();
+        window.focus();
+        canvas.focus();
+        
+        animate();
+    }
+
+    function handleInput(e) {
+        // 修正：增加對 keyCode 32 的支援，並防止預設捲動行為
+        if (e.type === 'keydown') {
+            if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
+                e.preventDefault(); // 防止空白鍵捲動網頁
+                if (isPlaying) player.jump();
+                return;
+            }
+        }
+        // 滑鼠/觸控支援
+        if (e.type === 'touchstart' || e.type === 'mousedown') {
+            if (isPlaying) player.jump();
+        }
+    }
+
+    window.addEventListener('keydown', handleInput);
+    window.addEventListener('touchstart', handleInput, {passive: false});
+    window.addEventListener('mousedown', handleInput);
+
+    startBtn.addEventListener('click', initGame);
+    restartBtn.addEventListener('click', () => { gameOverScreen.classList.add('hidden'); selectScreen.classList.remove('hidden'); });
+
+    // 音效與動畫邏輯
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    function playTone(freq, type, duration) {
+        if (!audioCtx) audioCtx = new AudioContext();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+    }
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'zh-TW'; u.rate = 1.2; u.pitch = 1.5;
+            window.speechSynthesis.speak(u);
+        }
+    }
+
+    function animate() {
+        if (!isPlaying) return;
+        animationId = requestAnimationFrame(animate);
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        
+        // 背景
+        if (currentLevel === 1) {
+            ctx.fillStyle = '#87CEEB'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); 
+            ctx.arc(150 - (frames*0.5)%1000, 100, 30, 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.fillStyle = '#d7ccc8'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.strokeStyle = '#a1887f'; ctx.beginPath(); ctx.moveTo(0,350); ctx.lineTo(400,150); ctx.moveTo(800,350); ctx.lineTo(400,150); ctx.stroke();
+            ctx.fillStyle = '#5d4037'; ctx.fillRect(380,100,40,250);
+        }
+
+        // 平台生成
+        const last = platforms[platforms.length-1];
+        if (last.x + last.width < canvas.width) {
+            let gap = (currentLevel === 2) ? Math.random()*80+100 : Math.random()*70+80;
+            platforms.push(new Platform(last.x + last.width + gap, Math.random()*200+100));
+        }
+        if (platforms[0].x + platforms[0].width < 0) platforms.shift();
+
+        platforms.forEach(p => { p.update(); p.draw(); });
+        player.update(); player.draw();
+
+        // 碰撞與得分
+        player.grounded = false;
+        platforms.forEach(p => {
+            if (player.x < p.x + p.width && player.x + player.width > p.x &&
+                player.y + player.height > p.y && player.y + player.height < p.y + player.dy + 8 + gameSpeed) {
+                player.grounded = true; player.dy = 0; player.y = p.y - player.height;
+            }
+        });
+
+        if (frames % 10 === 0) {
+            score++; scoreBoard.innerText = "Score: " + score;
+            if (score >= 50 && currentLevel === 1) {
+                currentLevel = 2; gameSpeed = 8;
+                levelText.innerText = "Level 2: 統神端火鍋"; levelText.classList.add('god-mode');
+                playTone(600, 'sawtooth', 0.2);
+            }
+        }
+        if (currentLevel === 2 && frames % 300 === 0) gameSpeed += 0.2;
+        frames++;
+    }
+
+    function gameOver() {
+        if(!isPlaying) return;
+        isPlaying = false; cancelAnimationFrame(animationId);
+        speak("哎呀！上班玩電腦喔！");
+        document.getElementById('finalScore').innerText = "得分: " + score;
+        document.getElementById('goTitle').innerText = (currentLevel === 2) ? "一代一代一代 (摔)" : "哎呀！上班玩電腦喔！";
+        gameOverScreen.classList.remove('hidden');
+    }
+
+    // 初始背景
+    ctx.fillStyle = '#2c3e50'; ctx.fillRect(0,0,canvas.width,canvas.height);
+</script>
+</body>
+</html>
