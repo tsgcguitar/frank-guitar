@@ -43,14 +43,14 @@
       <div>
         <div class="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-amber-200 bg-white/5">
           <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-          線上課平台｜10 週吉他入門
+          吉他線上課｜10週就入門
         </div>
         <h1 class="text-4xl md:text-6xl font-black leading-tight mt-6">
           Frank吉他教室
         </h1>
         <p class="text-xl md:text-2xl text-slate-200 mt-4">給初學者的十堂吉他課</p>
         <p class="text-slate-300 mt-6 leading-8 max-w-xl">
-          從拿琴、調音、六線譜，到和弦與節奏刷法，循序漸進學會彈唱。完成每一課都會升級，讓學習更有成就感。
+          從拿琴、調音、六線譜，到和弦、音階與節奏，循序漸進學會彈唱。十堂課後你將學會3種曲風、5首經典歌曲。
         </p>
 
         <div class="grid sm:grid-cols-3 gap-4 mt-8">
@@ -69,8 +69,7 @@
         </div>
 
         <div class="mt-8 text-sm text-slate-300 leading-7">
-          <div>老師帳號：<span class="font-bold text-white">Frank</span> / 密碼：<span class="font-bold text-white">guitar2026</span></div>
-          <div>學生帳號：<span class="font-bold text-white">Guitar</span> / 密碼：<span class="font-bold text-white">eadgbe</span></div>
+         
         </div>
       </div>
 
@@ -78,7 +77,7 @@
         <div class="text-center mb-6">
           <img :src="settings.logoUrl" alt="logo" class="h-24 w-24 rounded-3xl object-cover mx-auto bg-slate-100 p-3 ring-gold" @error="setDefaultLogo">
           <h2 class="text-3xl font-black mt-4">登入學習平台</h2>
-          <p class="text-slate-500 mt-2">學生可觀看課程與下載講義，老師可管理課程內容</p>
+          <p class="text-slate-500 mt-2">觀看課程與下載講義，老師可管理課程內容</p>
         </div>
         <div class="space-y-4">
           <div>
@@ -300,7 +299,7 @@
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <h3 class="font-black text-xl">課程操作</h3>
-                <p class="text-slate-500 text-sm mt-1">學生可看影片、下載講義、完成課程升級</p>
+                <p class="text-slate-500 text-sm mt-1">看影片、下載講義、完成課程升級</p>
               </div>
               <button
                 v-if="user.role === 'student'"
@@ -342,40 +341,7 @@
         </section>
       </section>
 
-      <!-- Course intro cards -->
-      <section class="mt-8">
-        <div class="flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <h2 class="text-3xl font-black">十堂課內容總覽</h2>
-            <p class="text-slate-500 mt-2">讓學生在開始前就知道每一週會學到什麼</p>
-          </div>
-        </div>
-
-        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
-          <div v-for="lesson in lessons" :key="'overview-'+lesson.id" class="rounded-[24px] bg-white p-5 shadow-soft card-hover">
-            <div class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">Week {{ lesson.id }}</div>
-            <h3 class="font-black text-xl mt-4">{{ lesson.title }}</h3>
-            <p class="text-slate-600 leading-7 mt-3">{{ lesson.shortDescription }}</p>
-            <div class="mt-4 text-sm text-amber-700 font-bold">講義頁數：{{ lesson.pages }}</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Footer -->
-      <footer class="mt-10 mb-6 rounded-[28px] bg-white p-6 shadow-soft">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h3 class="font-black text-xl">Frank吉他教室</h3>
-            <p class="text-slate-500 mt-1">從零開始，也能一步一步學會彈唱。</p>
-          </div>
-          <div class="flex flex-wrap gap-3" v-if="settings.instagram || settings.facebook">
-            <a v-if="settings.instagram" :href="settings.instagram" target="_blank" class="rounded-2xl bg-pink-50 text-pink-700 px-4 py-2 font-bold">Instagram</a>
-            <a v-if="settings.facebook" :href="settings.facebook" target="_blank" class="rounded-2xl bg-blue-50 text-blue-700 px-4 py-2 font-bold">Facebook</a>
-          </div>
-        </div>
-      </footer>
-    </main>
-  </section>
+     
 
   <!-- Level up modal -->
   <div v-if="levelUp.show" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -405,8 +371,8 @@ createApp({
       },
       settings: {
         logoUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=300&q=80',
-        introTitle: '從拿琴到彈唱，十堂課帶你穩穩上手吉他',
-        introText: '這是一套專為初學者設計的入門課程。\n你會從最基本的認識吉他、調音、六線譜開始，逐步學到音階、和弦、節奏與彈唱。\n每完成一堂課，都會獲得新的等級稱號，讓學習更有成就感。',
+        introTitle: 'Frank老師 - 給初學者的十堂吉他課',
+        introText: '這是一套專為初學者設計的入門課程。\n你會從最基本的認識吉他、調音、六線譜開始，逐步學到音階、和弦、節奏與彈唱。\n每完成一堂課，都會獲得新的等級稱號，讓我們一起闖關吧!',
         instagram: '',
         facebook: ''
       },
@@ -436,16 +402,16 @@ createApp({
         10: '誰家的大將軍 如此勇猛'
       },
       lessons: [
-        { id: 1, title: '認識吉他與基礎入門', shortDescription: '學會認識吉他、正確拿法、調音與音名基礎。', description: '認識吉他、吉他拿法、調音、調音軟體、爬格子、音名介紹', pages: 'p1 ~ p4', video: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g', handout: '#'},
-        { id: 2, title: '音階與六線譜入門', shortDescription: '開始練習爬音階，理解節拍器與六線譜。', description: '爬音階、節拍器、學習看六線譜、小蜜蜂、倫敦鐵橋', pages: 'p5 ~ p10', video: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk', handout: '#'},
-        { id: 3, title: '基礎曲目與和弦開始', shortDescription: '練習生日快樂與春神來了，開始接觸 C、G7 和弦。', description: '生日快樂、春神來了、C和弦、G7和弦、小蜜蜂、倫敦鐵橋', pages: 'p10 ~ p12', video: 'https://www.youtube.com/watch?v=fRh_vgS2dFE', handout: '#'},
-        { id: 4, title: '和弦擴充與寶貝', shortDescription: '加入 Em7/B、Fmaj7、F、Am7 等和弦應用。', description: 'Em7/B、Fmaj7、F、Am7和弦、寶貝', pages: 'p12 ~ p13', video: 'https://www.youtube.com/watch?v=OPf0YbXqDm0', handout: '#'},
-        { id: 5, title: '和弦刷法進階', shortDescription: '學習 G 和弦、生日快樂和弦版與基本刷法。', description: '生日快樂和弦、G和弦、Pick下上下上、春神來了和弦、和弦表二', pages: 'p11、p14', video: 'https://www.youtube.com/watch?v=JGwWNGJdvx8', handout: '#'},
-        { id: 6, title: '慢靈魂節奏', shortDescription: '建立穩定的節奏感，開始慢靈魂練習。', description: '慢靈魂節奏', pages: 'p5 ~ p16', video: 'https://www.youtube.com/watch?v=60ItHLz5WEA', handout: '#'},
-        { id: 7, title: '慢靈魂指法與擁抱', shortDescription: '練習 T1213121、T123121、T132 等指法與歌曲應用。', description: '慢靈魂樂指法、T1213121、T123121、T132、Em和弦、Dm7和弦、擁抱', pages: 'p17', video: 'https://www.youtube.com/watch?v=09R8_2nJtjg', handout: '#'},
-        { id: 8, title: '可不可以與根音概念', shortDescription: '學習 T121、根音與慢靈魂刷法搭配歌曲。', description: '可不可以、T121、根音、T1 23 1、慢靈魂刷法', pages: 'p18', video: 'https://www.youtube.com/watch?v=lp-EO5I60KA', handout: '#'},
-        { id: 9, title: '慢搖滾與浪人情歌', shortDescription: '進入慢搖滾風格，練習完整歌曲段落。', description: '慢搖滾、浪人情歌', pages: 'p19 ~ p21', video: 'https://www.youtube.com/watch?v=hT_nvWreIhg', handout: '#'},
-        { id: 10, title: '民謠搖滾總整與小手拉大手', shortDescription: '整合和弦表 3、民謠搖滾節奏與完整歌曲應用。', description: '和弦表3、民謠搖滾節奏、小手拉大手', pages: 'p22 ~ p27', video: 'https://www.youtube.com/watch?v=RgKAFK5djSk', handout: '#'}
+        { id: 1, title: '認識吉他', shortDescription: '成為拿著木棒的平民。', description: '認識吉他、吉他拿法、調音、調音軟體、爬格子、音名介紹', pages: 'p1 ~ p4', video: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g', handout: '#'},
+        { id: 2, title: '六線譜入門', shortDescription: '成為六線譜解碼員。', description: '爬音階、節拍器、學習看六線譜、小蜜蜂單音、倫敦鐵橋垮下來單音', pages: 'p5 ~ p10', video: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk', handout: '#'},
+        { id: 3, title: '基礎和弦開始', shortDescription: '成為生日快樂吟遊詩人。', description: '生日快樂單音、春神來了單音、C和弦、G7和弦、小蜜蜂和弦、倫敦鐵橋和弦', pages: 'p10 ~ p12', video: 'https://www.youtube.com/watch?v=fRh_vgS2dFE', handout: '#'},
+        { id: 4, title: '彈唱-寶貝', shortDescription: '成為和弦採集專家。', description: '和弦表1、寶貝', pages: 'p12 ~ p13', video: 'https://www.youtube.com/watch?v=OPf0YbXqDm0', handout: '#'},
+        { id: 5, title: 'Pick使用', shortDescription: '成為大指揮家。', description: '生日快樂和弦、G和弦、Pick下上下上、春神來了和弦、和弦表2', pages: 'p11、p14', video: 'https://www.youtube.com/watch?v=JGwWNGJdvx8', handout: '#'},
+        { id: 6, title: '慢靈魂節奏', shortDescription: '成為節奏諸侯。', description: '慢靈魂節奏', pages: 'p15 ~ p16', video: 'https://www.youtube.com/watch?v=60ItHLz5WEA', handout: '#'},
+        { id: 7, title: '彈唱-擁抱', shortDescription: '成為指彈潛行者。', description: '慢靈魂樂指法、T132、Em和弦、Dm7和弦、擁抱', pages: 'p17', video: 'https://www.youtube.com/watch?v=09R8_2nJtjg', handout: '#'},
+        { id: 8, title: '彈唱-可不可以', shortDescription: '成為混沌狙擊手。', description: '可不可以、慢靈魂刷法', pages: 'p18', video: 'https://www.youtube.com/watch?v=lp-EO5I60KA', handout: '#'},
+        { id: 9, title: '慢搖滾與彈唱-浪人情歌', shortDescription: '成為江湖浪人。', description: '慢搖滾、浪人情歌', pages: 'p19 ~ p21', video: 'https://www.youtube.com/watch?v=hT_nvWreIhg', handout: '#'},
+        { id: 10, title: '民謠搖滾與彈唱-小手拉大手', shortDescription: '成為誰家的大將軍 如此勇猛。', description: '和弦表3、民謠搖滾節奏、小手拉大手', pages: 'p22 ~ p27', video: 'https://www.youtube.com/watch?v=RgKAFK5djSk', handout: '#'}
       ]
     };
   },
@@ -602,3 +568,4 @@ createApp({
 </script>
 </body>
 </html>
+
