@@ -1,569 +1,604 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frank Guitar 線上吉他教室</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
-    
-    <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        
-        /* 節拍器動畫 */
-        .beat-dot { width: 12px; height: 12px; border-radius: 50%; background: #ccc; transition: background 0.1s; }
-        .beat-active { background: #ef4444; box-shadow: 0 0 10px #ef4444; transform: scale(1.2); }
-        
-        /* 和弦圖樣式 */
-        .fretboard { width: 140px; height: 160px; border: 1px solid #333; position: relative; background: #fff; margin: 0 auto; user-select: none; }
-        .string { position: absolute; height: 100%; width: 1px; background: #888; top: 0; }
-        .fret { position: absolute; width: 100%; height: 1px; background: #888; left: 0; }
-        .nut { position: absolute; width: 100%; height: 6px; background: #333; top: -6px; left: 0; }
-        
-        /* 和弦點點 */
-        .dot { 
-            position: absolute; width: 20px; height: 20px; border-radius: 50%; 
-            transform: translate(-50%, -50%); z-index: 10; 
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; color: white; font-weight: bold; cursor: pointer;
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-            transition: transform 0.1s;
-        }
-        .dot:active { transform: translate(-50%, -50%) scale(0.9); }
-        .dot-normal { background: #333; }
-        .dot-root { background: #ef4444; border: 2px solid #991b1b; } /* 根音為紅色 */
-        
-        /* 編輯模式下的互動感應區 */
-        .fret-cell { position: absolute; z-index: 5; cursor: crosshair; }
-        .fret-cell:hover { background-color: rgba(255, 200, 0, 0.2); }
-
-        [v-cloak] { display: none; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frank吉他教室｜給初學者的十堂吉他課</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
+  <style>
+    body { font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
+    [v-cloak] { display: none; }
+    .glass {
+      background: rgba(255,255,255,.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .video-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 20px; background:#0f172a; }
+    .video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .shadow-soft { box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12); }
+    .card-hover { transition: .25s ease; }
+    .card-hover:hover { transform: translateY(-3px); box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12); }
+    .locked { opacity: .5; }
+    .ring-gold { box-shadow: 0 0 0 3px rgba(251, 191, 36, .35); }
+    .hero-grid {
+      background-image:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    input[type=range] { accent-color: #f59e0b; }
+  </style>
 </head>
-<body class="bg-gray-100 h-screen overflow-hidden">
+<body class="bg-slate-100 text-slate-800">
+<div id="app" v-cloak>
+  <!-- Login -->
+  <section v-if="!user.isLoggedIn" class="min-h-screen bg-slate-950 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950"></div>
+    <div class="absolute inset-0 hero-grid opacity-30"></div>
+    <div class="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-amber-400/20 blur-3xl"></div>
+    <div class="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-orange-500/15 blur-3xl"></div>
 
-<div id="app" class="h-full flex flex-col" v-cloak>
-
-    <!-- 1. 登入畫面 -->
-    <div v-if="!user.isLoggedIn" class="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1510915361894-db8b60106cb1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')] bg-cover bg-center bg-no-repeat">
-        <div class="bg-white bg-opacity-95 p-8 rounded-xl shadow-2xl w-96 backdrop-blur-sm">
-            <div class="text-center mb-6">
-                <img :src="settings.logoUrl" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2907/2907253.png'" class="h-20 mx-auto mb-2 object-contain">
-                <h2 class="text-2xl font-bold text-gray-800 tracking-wider">FRANK GUITAR</h2>
-                <p class="text-gray-500 text-sm">專業吉他教學系統</p>
-            </div>
-            <div class="space-y-4">
-                <input type="text" v-model="loginForm.username" class="w-full border-gray-300 border p-3 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none transition" placeholder="帳號">
-                <input type="password" v-model="loginForm.password" @keyup.enter="handleLogin" class="w-full border-gray-300 border p-3 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none transition" placeholder="密碼">
-                <button @click="handleLogin" class="w-full bg-yellow-600 text-white p-3 rounded-lg hover:bg-yellow-700 transition font-bold shadow-lg transform hover:-translate-y-1">進入教室</button>
-            </div>
-            <p class="text-xs text-center text-gray-400 mt-4">預設: admin / 1234 (老師), student / 1234 (學生)</p>
+    <div class="relative min-h-screen max-w-6xl mx-auto px-6 py-10 grid lg:grid-cols-2 gap-10 items-center">
+      <div>
+        <div class="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-amber-200 bg-white/5">
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          線上課平台｜10 週吉他入門
         </div>
+        <h1 class="text-4xl md:text-6xl font-black leading-tight mt-6">
+          Frank吉他教室
+        </h1>
+        <p class="text-xl md:text-2xl text-slate-200 mt-4">給初學者的十堂吉他課</p>
+        <p class="text-slate-300 mt-6 leading-8 max-w-xl">
+          從拿琴、調音、六線譜，到和弦與節奏刷法，循序漸進學會彈唱。完成每一課都會升級，讓學習更有成就感。
+        </p>
+
+        <div class="grid sm:grid-cols-3 gap-4 mt-8">
+          <div class="glass rounded-2xl p-4 text-slate-800">
+            <div class="text-sm text-slate-500">課程數量</div>
+            <div class="text-2xl font-bold mt-1">10 堂</div>
+          </div>
+          <div class="glass rounded-2xl p-4 text-slate-800">
+            <div class="text-sm text-slate-500">適合對象</div>
+            <div class="text-2xl font-bold mt-1">初學者</div>
+          </div>
+          <div class="glass rounded-2xl p-4 text-slate-800">
+            <div class="text-sm text-slate-500">學習方式</div>
+            <div class="text-2xl font-bold mt-1">影片＋講義</div>
+          </div>
+        </div>
+
+        <div class="mt-8 text-sm text-slate-300 leading-7">
+          <div>老師帳號：<span class="font-bold text-white">Frank</span> / 密碼：<span class="font-bold text-white">guitar2026</span></div>
+          <div>學生帳號：<span class="font-bold text-white">Guitar</span> / 密碼：<span class="font-bold text-white">eadgbe</span></div>
+        </div>
+      </div>
+
+      <div class="glass rounded-[28px] p-8 shadow-soft text-slate-800 max-w-xl w-full mx-auto">
+        <div class="text-center mb-6">
+          <img :src="settings.logoUrl" alt="logo" class="h-24 w-24 rounded-3xl object-cover mx-auto bg-slate-100 p-3 ring-gold" @error="setDefaultLogo">
+          <h2 class="text-3xl font-black mt-4">登入學習平台</h2>
+          <p class="text-slate-500 mt-2">學生可觀看課程與下載講義，老師可管理課程內容</p>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm text-slate-500">帳號</label>
+            <input v-model="loginForm.username" type="text" placeholder="請輸入帳號" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-400">
+          </div>
+          <div>
+            <label class="text-sm text-slate-500">密碼</label>
+            <input v-model="loginForm.password" @keyup.enter="handleLogin" type="password" placeholder="請輸入密碼" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-400">
+          </div>
+          <button @click="handleLogin" class="w-full rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3.5 shadow-lg hover:scale-[1.01] transition">
+            進入 Frank吉他教室
+          </button>
+          <p v-if="loginError" class="text-rose-500 text-sm">{{ loginError }}</p>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <!-- 2. 主畫面 -->
-    <div v-else class="flex h-full">
-        <!-- 左側選單 -->
-        <aside class="w-80 bg-white shadow-xl flex flex-col z-10 border-r flex-shrink-0">
-            <div class="p-5 bg-gray-900 text-white flex items-center gap-3">
-                <img :src="settings.logoUrl" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2907/2907253.png'" class="h-10 w-10 bg-white rounded-full p-1 object-contain">
+  <!-- Main Platform -->
+  <section v-else class="min-h-screen">
+    <!-- Topbar -->
+    <header class="sticky top-0 z-40 border-b border-white/60 bg-white/80 backdrop-blur-xl">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col lg:flex-row lg:items-center gap-4 lg:justify-between">
+        <div class="flex items-center gap-4">
+          <img :src="settings.logoUrl" alt="logo" class="h-14 w-14 rounded-2xl object-cover bg-slate-100 p-2" @error="setDefaultLogo">
+          <div>
+            <h1 class="text-2xl font-black">Frank吉他教室</h1>
+            <p class="text-slate-500 text-sm">給初學者的十堂吉他課</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="rounded-2xl bg-slate-100 px-4 py-2 text-sm">
+            目前身分：<span class="font-bold">{{ user.role === 'teacher' ? '老師' : '學生' }}</span>
+          </div>
+          <div class="rounded-2xl bg-amber-50 text-amber-700 px-4 py-2 text-sm">
+            目前等級：<span class="font-bold">LV{{ user.level }} {{ currentLevelTitle }}</span>
+          </div>
+          <button @click="logout" class="rounded-2xl bg-slate-900 text-white px-4 py-2 text-sm hover:bg-slate-700 transition">登出</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <!-- Intro -->
+      <section class="grid xl:grid-cols-[1.3fr_.7fr] gap-6">
+        <div class="rounded-[28px] bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 text-white p-8 shadow-soft relative overflow-hidden">
+          <div class="absolute right-0 top-0 h-44 w-44 rounded-full bg-amber-400/10 blur-3xl"></div>
+          <div class="relative">
+            <div class="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm bg-white/5">
+              <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+              課程介紹
+            </div>
+            <h2 class="text-3xl md:text-4xl font-black mt-5">{{ settings.introTitle }}</h2>
+            <p class="text-slate-200 leading-8 mt-4 whitespace-pre-line">{{ settings.introText }}</p>
+
+            <div class="grid md:grid-cols-3 gap-4 mt-8">
+              <div class="rounded-2xl bg-white/10 p-4">
+                <div class="text-slate-300 text-sm">課程模式</div>
+                <div class="font-bold text-lg mt-1">影片＋講義</div>
+              </div>
+              <div class="rounded-2xl bg-white/10 p-4">
+                <div class="text-slate-300 text-sm">學習重點</div>
+                <div class="font-bold text-lg mt-1">吉他彈唱</div>
+              </div>
+              <div class="rounded-2xl bg-white/10 p-4">
+                <div class="text-slate-300 text-sm">適合對象</div>
+                <div class="font-bold text-lg mt-1">零基礎新手</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <div class="rounded-[28px] bg-white p-6 shadow-soft">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-black">學習進度</h3>
+              <span class="text-sm text-slate-500">{{ completedCount }}/10 已完成</span>
+            </div>
+            <div class="mt-4 h-3 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" :style="{ width: progressPercent + '%' }"></div>
+            </div>
+            <p class="text-slate-500 mt-4 text-sm leading-7">
+              完成每一堂課後，即可解鎖下一課並獲得新的等級稱號。
+            </p>
+          </div>
+
+          <div class="rounded-[28px] bg-white p-6 shadow-soft">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-black">節拍器</h3>
+              <span class="text-sm text-slate-500">練習專注節奏感</span>
+            </div>
+
+            <div class="flex items-end justify-between gap-4">
+              <div>
+                <div class="text-slate-500 text-sm">BPM</div>
+                <div class="text-4xl font-black">{{ metronome.bpm }}</div>
+              </div>
+              <button @click="toggleMetronome" :class="metronome.isPlaying ? 'bg-rose-500 hover:bg-rose-600' : 'bg-emerald-500 hover:bg-emerald-600'" class="text-white font-bold px-5 py-3 rounded-2xl transition">
+                {{ metronome.isPlaying ? '停止' : '開始' }}
+              </button>
+            </div>
+
+            <input type="range" min="40" max="220" v-model="metronome.bpm" class="w-full mt-5">
+            <div class="flex justify-between text-xs text-slate-400 mt-1">
+              <span>40</span><span>220</span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 mt-5">
+              <button v-for="preset in [60,80,100,120]" :key="preset" @click="metronome.bpm = preset" class="rounded-xl bg-slate-100 py-2 text-sm hover:bg-amber-50 hover:text-amber-700">
+                {{ preset }} BPM
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Teacher settings -->
+      <section v-if="user.role === 'teacher'" class="mt-6 rounded-[28px] bg-white p-6 shadow-soft">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h3 class="text-2xl font-black">老師後台設定</h3>
+            <p class="text-slate-500 mt-1">可修改 Logo、課程介紹、IG、FB 與各週課程內容</p>
+          </div>
+          <button @click="saveSettings" class="rounded-2xl bg-slate-900 text-white px-5 py-3 font-bold hover:bg-slate-700 transition">儲存所有設定</button>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-5 mt-6">
+          <div class="rounded-2xl border border-slate-200 p-5">
+            <h4 class="font-bold text-lg mb-4">平台資料</h4>
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm text-slate-500">登入頁 Logo 圖片網址</label>
+                <input v-model="settings.logoUrl" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">課程介紹標題</label>
+                <input v-model="settings.introTitle" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">課程介紹內文</label>
+                <textarea v-model="settings.introText" rows="6" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 p-5">
+            <h4 class="font-bold text-lg mb-4">社群連結</h4>
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm text-slate-500">Instagram 連結</label>
+                <input v-model="settings.instagram" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">Facebook 連結</label>
+                <input v-model="settings.facebook" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Lessons -->
+      <section class="mt-8 grid xl:grid-cols-[360px_1fr] gap-6">
+        <aside class="rounded-[28px] bg-white p-5 shadow-soft h-fit">
+          <div class="flex items-center justify-between">
+            <h3 class="text-2xl font-black">課程目錄</h3>
+            <span class="text-sm text-slate-500">Week 1 - 10</span>
+          </div>
+
+          <div class="mt-5 space-y-3">
+            <button
+              v-for="lesson in lessons"
+              :key="lesson.id"
+              @click="selectLesson(lesson.id)"
+              :disabled="!canAccessLesson(lesson.id)"
+              class="w-full text-left rounded-2xl border p-4 transition card-hover"
+              :class="[
+                selectedLessonId === lesson.id ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white',
+                !canAccessLesson(lesson.id) ? 'locked cursor-not-allowed' : ''
+              ]"
+            >
+              <div class="flex items-start justify-between gap-3">
                 <div>
-                    <h1 class="font-bold text-lg tracking-wide">FRANK GUITAR</h1>
-                    <span class="text-xs text-yellow-400 bg-gray-800 px-2 py-0.5 rounded border border-yellow-600">
-                        {{ user.role === 'teacher' ? '👨‍🏫 老師端' : '👨‍🎓 學生端' }}
-                    </span>
+                  <div class="text-xs uppercase tracking-wider text-slate-400">Week {{ lesson.id }}</div>
+                  <div class="font-bold mt-1">{{ lesson.title }}</div>
                 </div>
-            </div>
-
-            <!-- Gamification -->
-            <div class="p-4 bg-gradient-to-r from-gray-800 to-gray-700 text-white border-b border-gray-600">
-                <div class="flex justify-between items-end mb-2">
-                    <div>
-                        <div class="text-xs text-gray-300">目前等級</div>
-                        <div class="text-2xl font-bold text-yellow-400">Lv. {{ userLevel.level }}</div>
-                    </div>
-                    <div class="text-xs text-right text-gray-300">XP: {{ user.xp }} / {{ userLevel.nextLevelXp }}</div>
-                </div>
-                <div class="w-full bg-gray-600 rounded-full h-2.5 mb-3">
-                    <div class="bg-yellow-500 h-2.5 rounded-full transition-all duration-500" :style="{ width: userLevel.progress + '%' }"></div>
-                </div>
-                <div class="flex justify-between gap-1 overflow-x-auto scrollbar-hide py-1">
-                    <div v-for="badge in badges" :key="badge.id" :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs border-2 tooltip-container cursor-help transition', user.badges.includes(badge.id) ? 'bg-yellow-100 border-yellow-500 text-yellow-700' : 'bg-gray-600 border-gray-500 text-gray-400 grayscale opacity-50']" :title="badge.desc">
-                        <i :class="badge.icon"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 課程列表 -->
-            <div class="flex-1 overflow-y-auto scrollbar-hide bg-gray-50">
-                <div v-for="(lesson, index) in lessons" :key="index" 
-                     @click="selectLesson(index)"
-                     :class="['p-3 border-b cursor-pointer transition hover:bg-white text-sm relative group', currentLessonIndex === index ? 'bg-yellow-50 border-l-4 border-yellow-600' : 'border-l-4 border-transparent']">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="font-bold text-gray-500 text-xs">Week {{ index + 1 }}</span>
-                        <div class="flex gap-1">
-                            <i v-if="lesson.videoUrl" class="fa-solid fa-video text-gray-300 text-xs"></i>
-                            <i v-if="lesson.homework && lesson.homework.hasSubmission" class="fa-solid fa-check-circle text-green-500 text-xs" title="作業已繳"></i>
-                        </div>
-                    </div>
-                    <div class="text-gray-800 font-medium truncate group-hover:text-yellow-700 transition">{{ lesson.title }}</div>
-                </div>
-            </div>
-
-            <div class="bg-white border-t p-3 space-y-2">
-                <div class="flex gap-2">
-                    <a href="https://frankguitar2.webnode.tw/" target="_blank" class="flex-1 text-center py-2 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 font-bold transition"><i class="fa-solid fa-globe mr-1"></i> 官網</a>
-                    <a href="https://www.instagram.com/isabella_workroom?igsh=a2RiNDE3YTg1dGNz&utm_source=qr" target="_blank" class="flex-1 text-center py-2 bg-pink-50 hover:bg-pink-100 rounded text-xs text-pink-600 font-bold transition"><i class="fa-brands fa-instagram mr-1"></i> IG</a>
-                </div>
-                <button @click="logout" class="w-full text-center text-xs text-gray-400 hover:text-red-500 mt-1">登出</button>
-            </div>
+                <div v-if="isLessonCompleted(lesson.id)" class="rounded-full bg-emerald-100 text-emerald-700 text-xs px-2 py-1 font-bold">完成</div>
+                <div v-else-if="!canAccessLesson(lesson.id)" class="rounded-full bg-slate-100 text-slate-400 text-xs px-2 py-1 font-bold">未解鎖</div>
+              </div>
+            </button>
+          </div>
         </aside>
 
-        <!-- 右側內容區 -->
-        <main class="flex-1 overflow-y-auto bg-gray-100 relative">
-            
-            <!-- 懸浮工具 -->
-            <div class="fixed top-4 right-4 z-40 flex gap-2">
-                <button @click="showChordModal = true" class="bg-white p-3 rounded-full shadow-lg text-gray-700 hover:text-yellow-600 hover:scale-110 transition" title="和弦查詢"><i class="fa-solid fa-music"></i></button>
-                <button @click="showMetronome = !showMetronome" :class="['p-3 rounded-full shadow-lg transition hover:scale-110', showMetronome ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:text-yellow-600']" title="節拍器"><i class="fa-solid fa-clock"></i></button>
+        <section class="rounded-[28px] bg-white p-6 shadow-soft" v-if="currentLesson">
+          <div class="flex flex-col 2xl:flex-row 2xl:items-start justify-between gap-6">
+            <div>
+              <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 text-amber-700 px-4 py-2 text-sm font-bold">
+                Week {{ currentLesson.id }}
+              </div>
+              <h2 class="text-3xl font-black mt-4">{{ currentLesson.title }}</h2>
+              <p class="text-slate-600 leading-8 mt-4 whitespace-pre-line">{{ currentLesson.description }}</p>
             </div>
-
-            <!-- 節拍器面板 -->
-            <div v-if="showMetronome" class="fixed top-20 right-4 z-30 bg-gray-800 p-5 rounded-xl shadow-2xl text-white w-64 border border-gray-700">
-                <h3 class="font-bold text-yellow-500 mb-3"><i class="fa-solid fa-stopwatch"></i> 節拍器</h3>
-                <div class="flex justify-between items-center mb-4">
-                    <button @click="adjustBpm(-5)" class="w-8 h-8 bg-gray-700 rounded hover:bg-gray-600">-</button>
-                    <div class="text-3xl font-mono font-bold">{{ metronome.bpm }}</div>
-                    <button @click="adjustBpm(5)" class="w-8 h-8 bg-gray-700 rounded hover:bg-gray-600">+</button>
-                </div>
-                <button @click="toggleMetronome" :class="['w-full py-2 rounded font-bold transition', metronome.isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700']">{{ metronome.isPlaying ? '停止' : '開始' }}</button>
+            <div class="rounded-3xl bg-slate-50 p-5 min-w-[280px]">
+              <div class="text-sm text-slate-500">本課講義頁數</div>
+              <div class="text-2xl font-black mt-1">{{ currentLesson.pages }}</div>
+              <a :href="currentLesson.handout" target="_blank" class="mt-4 inline-flex items-center justify-center w-full rounded-2xl bg-slate-900 text-white px-4 py-3 font-bold hover:bg-slate-700 transition">
+                下載講義
+              </a>
             </div>
+          </div>
 
-            <!-- ★★★ 和弦查詢與編輯器 Modal ★★★ -->
-            <div v-if="showChordModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click.self="showChordModal = false">
-                <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md m-4 relative">
-                    <!-- 標題與關閉 -->
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2">
-                            <i class="fa-solid fa-music text-yellow-500"></i> 和弦字典
-                            <span v-if="isEditingChord" class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">編輯模式</span>
-                        </h3>
-                        <div>
-                            <!-- 老師才看得到的編輯按鈕 -->
-                            <button v-if="user.role === 'teacher'" @click="toggleChordEdit" :class="['text-xs px-3 py-1 rounded mr-2 transition', isEditingChord ? 'bg-green-500 text-white' : 'bg-gray-200 hover:bg-gray-300']">
-                                <i :class="isEditingChord ? 'fa-solid fa-save' : 'fa-solid fa-pen'"></i> {{ isEditingChord ? '儲存設定' : '編輯' }}
-                            </button>
-                            <button @click="showChordModal = false" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
-                        </div>
-                    </div>
+          <div class="mt-6 video-wrap shadow-soft">
+            <iframe :src="youtubeEmbed(currentLesson.video)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
 
-                    <!-- 選擇器 -->
-                    <div class="flex gap-2 mb-6">
-                        <select v-model="chord.root" class="flex-1 p-2 border rounded bg-gray-50 font-bold text-center text-lg"><option v-for="r in chordRoots" :value="r">{{r}}</option></select>
-                        <select v-model="chord.suffix" class="flex-1 p-2 border rounded bg-gray-50 text-center text-lg"><option v-for="s in chordSuffixes" :value="s.val">{{s.name}}</option></select>
-                    </div>
-
-                    <!-- 指板顯示區 -->
-                    <div class="flex flex-col items-center select-none">
-                        <h2 class="text-4xl font-bold text-yellow-600 mb-4">{{ chord.root }}{{ chord.suffix }}</h2>
-                        
-                        <!-- 互動式指板 -->
-                        <div class="fretboard shadow-inner relative">
-                            <!-- 弦與琴衍 (視覺層) -->
-                            <div v-for="i in 6" :style="{left: (i-1)*24 + 10 + 'px'}" class="string"></div>
-                            <div v-for="i in 5" :style="{top: (i-1)*32 + 'px'}" class="fret"></div>
-                            <div class="nut"></div>
-
-                            <!-- 編輯模式下的感應網格 (點擊層) -->
-                            <div v-if="isEditingChord">
-                                <template v-for="s in 6">
-                                    <div v-for="f in 5" 
-                                         class="fret-cell" 
-                                         :style="{left: (s-1)*24 + 'px', top: (f-1)*32 + 'px', width: '24px', height: '32px'}"
-                                         @click.left="handleFretClick(7-s, f)"
-                                         @contextmenu.prevent="handleFretRightClick(7-s, f)"
-                                         title="左鍵:新增/換指 | 右鍵:設為根音">
-                                    </div>
-                                </template>
-                            </div>
-
-                            <!-- 和弦點點 (顯示層) -->
-                            <div v-for="dot in currentChordDots" 
-                                 :class="['dot', dot.isRoot ? 'dot-root' : 'dot-normal']"
-                                 :style="{left: (7-dot.s-1)*24 + 10 + 'px', top: (dot.f * 32) - 16 + 'px'}"
-                                 @click.stop="isEditingChord ? handleFretClick(dot.s, dot.f) : null"
-                                 @contextmenu.prevent.stop="isEditingChord ? handleFretRightClick(dot.s, dot.f) : null">
-                                {{ dot.finger }}
-                            </div>
-                        </div>
-
-                        <!-- 編輯說明 -->
-                        <div v-if="isEditingChord" class="mt-4 text-xs text-gray-500 bg-gray-100 p-2 rounded w-full text-center">
-                            <p><i class="fa-solid fa-computer-mouse"></i> <b>左鍵點擊</b>：新增按法 / 切換指法(1-4) / 移除</p>
-                            <p><i class="fa-solid fa-flag"></i> <b>右鍵點擊</b>：設為 <span class="text-red-500 font-bold">根音 (紅色)</span></p>
-                        </div>
-                        <div v-else class="text-sm text-gray-400 mt-4">指板上方為第 1 格 (Nut)</div>
-                    </div>
-                </div>
+          <div class="mt-6 rounded-3xl bg-slate-50 p-5">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h3 class="font-black text-xl">課程操作</h3>
+                <p class="text-slate-500 text-sm mt-1">學生可看影片、下載講義、完成課程升級</p>
+              </div>
+              <button
+                v-if="user.role === 'student'"
+                @click="completeLesson(currentLesson.id)"
+                :disabled="!canCompleteLesson(currentLesson.id)"
+                class="rounded-2xl px-5 py-3 text-white font-bold transition"
+                :class="canCompleteLesson(currentLesson.id) ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-300 cursor-not-allowed'"
+              >
+                {{ isLessonCompleted(currentLesson.id) ? '本課已完成' : '完成本課並升級' }}
+              </button>
             </div>
+          </div>
 
-            <!-- 課程內容 (同 V8, 省略部分重複代碼以節省篇幅, 功能完全保留) -->
-            <div class="max-w-5xl mx-auto p-6 min-h-screen pb-32">
-                <div v-if="currentLesson">
-                    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border-l-4 border-yellow-500">
-                        <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded">Week {{ currentLessonIndex + 1 }}</span>
-                        <h2 class="text-3xl font-bold mt-2 text-gray-800">{{ currentLesson.title }}</h2>
-                        <p class="mt-2 text-gray-600">{{ currentLesson.desc }}</p>
-                        <div v-if="user.role === 'teacher'" class="mt-4 p-2 bg-blue-50 text-blue-700 text-xs rounded border border-blue-100">
-                            <i class="fa-solid fa-info-circle"></i> 提示：修改課程標題/連結請編輯 index.html。
-                        </div>
-                    </div>
-                    <!-- 影片 -->
-                    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                        <h3 class="font-bold text-gray-700 mb-4 border-l-4 border-red-500 pl-2">教學影片</h3>
-                        <div v-if="getEmbedUrl(currentLesson.videoUrl)">
-                            <div class="video-container rounded-lg bg-black">
-                                <iframe :src="getEmbedUrl(currentLesson.videoUrl)" frameborder="0" allowfullscreen></iframe>
-                            </div>
-                        </div>
-                        <div v-else class="h-64 bg-gray-200 rounded-lg flex flex-col items-center justify-center text-gray-500"><i class="fa-brands fa-youtube text-4xl mb-2"></i><p>本週無影片連結</p></div>
-                    </div>
-                    <!-- 講義 -->
-                    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                        <h3 class="font-bold text-gray-700 mb-4 border-l-4 border-green-500 pl-2">講義資源</h3>
-                        <div v-if="currentLesson.handoutUrl">
-                            <div v-if="isImage(currentLesson.handoutUrl)">
-                                <img :src="currentLesson.handoutUrl" class="w-full h-auto rounded border mb-2 cursor-pointer shadow" onclick="window.open(this.src)">
-                            </div>
-                            <div v-else class="text-center py-8">
-                                <a :href="currentLesson.handoutUrl" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 shadow"><i class="fa-solid fa-download"></i> 開啟講義</a>
-                            </div>
-                        </div>
-                        <div v-else class="text-center py-10 bg-gray-50 border border-dashed rounded"><p class="text-gray-400 text-sm">無講義</p></div>
-                    </div>
-                    <!-- 作業 (本地) -->
-                    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border-2 border-orange-100">
-                        <div class="flex justify-between items-center mb-4 border-l-4 border-orange-500 pl-2">
-                            <h3 class="font-bold text-gray-700">本週作業</h3>
-                            <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold">+50 XP</span>
-                        </div>
-                        <div v-if="!currentLesson.homework.hasSubmission">
-                            <div v-if="user.role === 'student'">
-                                <div class="bg-orange-50 p-4 rounded mb-4">
-                                    <input v-model="tempHomework.link" class="w-full border p-2 rounded mb-2 text-sm" placeholder="連結...">
-                                    <textarea v-model="tempHomework.note" class="w-full border p-2 rounded text-sm" placeholder="心得..."></textarea>
-                                </div>
-                                <button @click="submitHomework" class="bg-orange-500 text-white px-6 py-2 rounded font-bold hover:bg-orange-600 shadow">提交</button>
-                            </div>
-                            <div v-else class="text-gray-500 text-center py-4 bg-gray-50 rounded">尚未繳交</div>
-                        </div>
-                        <div v-else class="bg-gray-50 p-4 rounded">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="bg-green-600 text-white text-xs px-2 py-1 rounded">已繳交</span>
-                                <span class="text-xs text-gray-500">{{ currentLesson.homework.date }}</span>
-                            </div>
-                            <p class="font-bold text-gray-800"><a :href="currentLesson.homework.link" target="_blank" class="text-blue-600 underline">作業連結</a></p>
-                            <p class="text-gray-600 mt-2 text-sm bg-white p-2 rounded border">"{{ currentLesson.homework.note }}"</p>
-                            <div v-if="user.role === 'teacher'" class="mt-4 border-t pt-4">
-                                <input v-model="currentLesson.homework.teacherGrade" class="border p-1 rounded w-20 mb-2 text-sm" placeholder="分數">
-                                <button @click="saveHomeworkGrade" class="bg-blue-600 text-white px-4 py-1 rounded text-sm">評分</button>
-                            </div>
-                            <div v-if="user.role === 'student' && currentLesson.homework.isGraded" class="mt-4 border-t pt-4 bg-blue-50 p-3 rounded">
-                                <div class="text-2xl font-bold text-red-500">{{ currentLesson.homework.teacherGrade }} 分</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <div v-if="user.role === 'teacher'" class="mt-6 rounded-3xl border border-slate-200 p-5">
+            <h3 class="text-xl font-black mb-4">編輯本課內容</h3>
+            <div class="grid lg:grid-cols-2 gap-4">
+              <div class="lg:col-span-2">
+                <label class="text-sm text-slate-500">課程標題</label>
+                <input v-model="currentLesson.title" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div class="lg:col-span-2">
+                <label class="text-sm text-slate-500">課程說明</label>
+                <textarea v-model="currentLesson.description" rows="5" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"></textarea>
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">YouTube 連結</label>
+                <input v-model="currentLesson.video" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">講義下載連結</label>
+                <input v-model="currentLesson.handout" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">頁數顯示</label>
+                <input v-model="currentLesson.pages" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
             </div>
-        </main>
+          </div>
+        </section>
+      </section>
+
+      <!-- Course intro cards -->
+      <section class="mt-8">
+        <div class="flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-3xl font-black">十堂課內容總覽</h2>
+            <p class="text-slate-500 mt-2">讓學生在開始前就知道每一週會學到什麼</p>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
+          <div v-for="lesson in lessons" :key="'overview-'+lesson.id" class="rounded-[24px] bg-white p-5 shadow-soft card-hover">
+            <div class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">Week {{ lesson.id }}</div>
+            <h3 class="font-black text-xl mt-4">{{ lesson.title }}</h3>
+            <p class="text-slate-600 leading-7 mt-3">{{ lesson.shortDescription }}</p>
+            <div class="mt-4 text-sm text-amber-700 font-bold">講義頁數：{{ lesson.pages }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="mt-10 mb-6 rounded-[28px] bg-white p-6 shadow-soft">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 class="font-black text-xl">Frank吉他教室</h3>
+            <p class="text-slate-500 mt-1">從零開始，也能一步一步學會彈唱。</p>
+          </div>
+          <div class="flex flex-wrap gap-3" v-if="settings.instagram || settings.facebook">
+            <a v-if="settings.instagram" :href="settings.instagram" target="_blank" class="rounded-2xl bg-pink-50 text-pink-700 px-4 py-2 font-bold">Instagram</a>
+            <a v-if="settings.facebook" :href="settings.facebook" target="_blank" class="rounded-2xl bg-blue-50 text-blue-700 px-4 py-2 font-bold">Facebook</a>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </section>
+
+  <!-- Level up modal -->
+  <div v-if="levelUp.show" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="max-w-lg w-full rounded-[28px] bg-white p-8 shadow-soft text-center">
+      <div class="mx-auto h-20 w-20 rounded-full bg-amber-100 flex items-center justify-center text-4xl">🎸</div>
+      <h3 class="text-3xl font-black mt-5">恭喜升級 LV{{ levelUp.level }}</h3>
+      <p class="text-xl text-amber-700 font-bold mt-3">{{ levelUp.title }}</p>
+      <p class="text-slate-500 mt-4">你已完成第 {{ levelUp.lessonId }} 課，繼續往下一課前進吧！</p>
+      <button @click="levelUp.show = false" class="mt-6 rounded-2xl bg-slate-900 text-white px-6 py-3 font-bold">我知道了</button>
     </div>
+  </div>
 </div>
 
 <script>
-    const { createApp } = Vue;
+const { createApp } = Vue;
 
-    const BADGES = [
-        { id: 'novice', name: '吉他新星', desc: '完成 5 堂課程', icon: 'fa-solid fa-star' },
-        { id: 'homework_king', name: '練習狂人', desc: '繳交 5 次作業', icon: 'fa-solid fa-pen-nib' },
-        { id: 'halfway', name: '中級樂手', desc: '完成 30 堂課程', icon: 'fa-solid fa-medal' },
-        { id: 'master', name: '指彈大師', desc: '完成 60 堂課程', icon: 'fa-solid fa-crown' }
-    ];
-
-    const lessonsData = [
-        { title: "認識吉他，爬格子，調音方式，音階練習", desc: "這是吉他旅程的起點。", videoUrl: "https://youtu.be/zZFLh6e_WIs?si=4sBiSU1sS1qw1xQi", handoutUrl: "" },
-        { title: "學習看六線譜，小蜜蜂單音", desc: "學會閱讀吉他專用的樂譜。", videoUrl: "https://youtu.be/L5MxxZ3Qk2o?si=ORgiGiAYfp9Ix9aS", handoutUrl: "" },
-        { title: "和弦練習，C G7 小蜜蜂和弦", desc: "第一次刷出和聲。", videoUrl: "https://youtu.be/sRBbHiRuO2w?si=R8WpQSF6dwh0KuJn", handoutUrl: "" },
-        { title: "和弦表1 寶貝", desc: "張懸經典歌曲實戰。", videoUrl: "https://youtu.be/IBDuz3hyfUA?si=KdqswqRrn297PPVe", handoutUrl: "" },
-        { title: "寶貝指法版 慢靈魂指法", desc: "從刷法轉為細膩的指法。", videoUrl: "https://youtu.be/niffuL6lpAE?si=egmVLpFDrf9eIGSo", handoutUrl: "" },
-        { title: "擁抱歌曲", desc: "五月天入門必學。", videoUrl: "https://youtu.be/XgB9p6I1ci8?si=UrFdvuk_DIr3-h_0", handoutUrl: "" },
-        { title: "可不可以/擁抱 指法 刷法", desc: "綜合練習。", videoUrl: "https://youtu.be/1QJCY_Y7FCQ?si=AlI_b7bjxDu0nS0U", handoutUrl: "" },
-        { title: "慢搖滾節奏 浪人情歌", desc: "感受 Slow Rock 的律動。", videoUrl: "https://youtu.be/fpxQx3TeSGc?si=VtRA1apa1YATGBSX", handoutUrl: "" },
-        { title: "浪人情歌 新不了情", desc: "經典情歌實戰。", videoUrl: "", handoutUrl: "" },
-        { title: "和弦表3 蒲公英的約定", desc: "周杰倫經典曲目。", videoUrl: "", handoutUrl: "" },
-        { title: "民謠搖滾節奏 小手拉大手", desc: "輕快的 Folk Rock 節奏。", videoUrl: "", handoutUrl: "" },
-        { title: "戀愛ING", desc: "快速刷法的練習。", videoUrl: "", handoutUrl: "" },
-        { title: "分割和弦/愛很簡單", desc: "學習 Slash Chords (如 C/G)。", videoUrl: "", handoutUrl: "" },
-        { title: "兒歌", desc: "簡單好聽的兒歌編曲。", videoUrl: "", handoutUrl: "" },
-        { title: "愛很簡單/兒歌", desc: "綜合練習。", videoUrl: "", handoutUrl: "" },
-        { title: "晴天", desc: "周杰倫必學金曲。", videoUrl: "", handoutUrl: "" },
-        { title: "晴天/跑馬式節奏", desc: "獨特的節奏型態。", videoUrl: "", handoutUrl: "" },
-        { title: "16beat/卡農", desc: "16分音符的刷法挑戰。", videoUrl: "", handoutUrl: "" },
-        { title: "卡農/小幸運", desc: "流行金曲實戰。", videoUrl: "", handoutUrl: "" },
-        { title: "樂理/G大調和弦/封閉和弦Bm/溫柔", desc: "進入封閉和弦的大魔王關卡。", videoUrl: "", handoutUrl: "" },
-        { title: "你看著我的眼睛說", desc: "歌曲實戰。", videoUrl: "", handoutUrl: "" },
-        { title: "垂勾滑音練習/不是天氣晴朗才愛你", desc: "吉他裝飾音技巧 (Hammer-on, Pull-off)。", videoUrl: "", handoutUrl: "" },
-        { title: "靈魂樂/Kiss Me", desc: "Soul 節奏風格。", videoUrl: "", handoutUrl: "" },
-        { title: "根音與經過音的變化/天使", desc: "讓伴奏更豐富的技巧。", videoUrl: "", handoutUrl: "" },
-        { title: "Wonderful Tonight", desc: "Clapton 經典。", videoUrl: "", handoutUrl: "" },
-        { title: "轉調/Hey Jude", desc: "學習歌曲中途轉調的概念。", videoUrl: "", handoutUrl: "" },
-        { title: "換弦/海綿寶寶", desc: "吉他保養與趣味歌曲。", videoUrl: "", handoutUrl: "" },
-        { title: "夢中的婚禮", desc: "演奏曲入門。", videoUrl: "", handoutUrl: "" },
-        { title: "愛的羅曼史", desc: "古典吉他經典名曲。", videoUrl: "", handoutUrl: "" },
-        { title: "強力和絃/自由", desc: "Power Chord 與搖滾樂。", videoUrl: "", handoutUrl: "" },
-        { title: "五聲音階/自由solo", desc: "進入即興演奏的大門。", videoUrl: "", handoutUrl: "" },
-        { title: "太陽與地球", desc: "演奏曲練習。", videoUrl: "", handoutUrl: "" },
-        { title: "怎麼了演奏曲", desc: "周興哲歌曲改編。", videoUrl: "", handoutUrl: "" },
-        { title: "級數與順階和絃/大三小三和絃", desc: "深入樂理知識。", videoUrl: "", handoutUrl: "" },
-        { title: "卡農2/封閉和弦", desc: "進階卡農版本。", videoUrl: "", handoutUrl: "" },
-        { title: "和絃動音線/愛我別走", desc: "Line Cliche 技巧。", videoUrl: "", handoutUrl: "" },
-        { title: "愛我別走Solo/情歌", desc: "歌曲獨奏部分。", videoUrl: "", handoutUrl: "" },
-        { title: "打版/普通朋友", desc: "陶喆經典，學習打板技巧。", videoUrl: "", handoutUrl: "" },
-        { title: "和絃裝飾音/旅行的意義", desc: "陳綺貞風格。", videoUrl: "", handoutUrl: "" },
-        { title: "雙音/To Be With You", desc: "Double Stops 技巧。", videoUrl: "", handoutUrl: "" },
-        { title: "CAGED系統", desc: "指板邏輯系統。", videoUrl: "", handoutUrl: "" },
-        { title: "切音與悶音/I'm Yours", desc: "Jason Mraz 的招牌節奏。", videoUrl: "", handoutUrl: "" },
-        { title: "泛音/想見你", desc: "Harmonics 技巧。", videoUrl: "", handoutUrl: "" },
-        { title: "簡化和絃/還是會", desc: "複雜和弦的簡化按法。", videoUrl: "", handoutUrl: "" },
-        { title: "放克", desc: "Funk 風格節奏。", videoUrl: "", handoutUrl: "" },
-        { title: "和絃的連接與經過和絃/體面", desc: "讓和弦進行更順暢。", videoUrl: "", handoutUrl: "" },
-        { title: "愛的羅曼史2", desc: "進階版本。", videoUrl: "", handoutUrl: "" },
-        { title: "大七小七屬七和弦", desc: "7th Chords 的色彩。", videoUrl: "", handoutUrl: "" },
-        { title: "代理和絃/修練愛情", desc: "和弦替代的概念。", videoUrl: "", handoutUrl: "" },
-        { title: "雙吉他伴奏編曲", desc: "如何與另一把吉他配合。", videoUrl: "", handoutUrl: "" },
-        { title: "藍調音階/藍調12小節", desc: "Blues 基礎。", videoUrl: "", handoutUrl: "" },
-        { title: "指板自然音階 5指型", desc: "熟悉整個指板。", videoUrl: "", handoutUrl: "" },
-        { title: "藍調範例句型", desc: "Blues Licks。", videoUrl: "", handoutUrl: "" },
-        { title: "即興實戰 (Call & Response)", desc: "對話式的即興。", videoUrl: "", handoutUrl: "" },
-        { title: "演奏曲 岸部真明-花", desc: "指彈大師名曲。", videoUrl: "", handoutUrl: "" },
-        { title: "Shell Voicing技巧", desc: "讓和弦更加多樣化。", videoUrl: "", handoutUrl: "" },
-        { title: "Bossa Nova 節奏與和弦", desc: "爵士入門風格。", videoUrl: "", handoutUrl: "" },
-        { title: "聽音訓練與抓歌技巧", desc: "訓練耳朵。", videoUrl: "", handoutUrl: "" },
-        { title: "錄音介面與簡易宅錄", desc: "錄音介面介紹將自己的創作高品質錄製。", videoUrl: "", handoutUrl: "" },
-        { title: "成果發表 / 總複習", desc: "60週課程總結與未來展望。", videoUrl: "", handoutUrl: "" }
-    ];
-
-    // 預設和弦 (可以被 LocalStorage 覆蓋)
-    const DEFAULT_CHORDS = {
-        'C': [{s:5,f:3,finger:3,isRoot:true}, {s:4,f:2,finger:2}, {s:2,f:1,finger:1}],
-        'D': [{s:4,f:0,finger:0,isRoot:true}, {s:3,f:2,finger:1}, {s:1,f:2,finger:2}, {s:2,f:3,finger:3}],
-        'E': [{s:6,f:0,finger:0,isRoot:true}, {s:3,f:1,finger:1}, {s:5,f:2,finger:2}, {s:4,f:2,finger:3}],
-        'G': [{s:6,f:3,finger:2,isRoot:true}, {s:5,f:2,finger:1}, {s:1,f:3,finger:3}],
-        'A': [{s:5,f:0,finger:0,isRoot:true}, {s:4,f:2,finger:1}, {s:3,f:2,finger:2}, {s:2,f:2,finger:3}],
-        'Am': [{s:5,f:0,finger:0,isRoot:true}, {s:2,f:1,finger:1}, {s:4,f:2,finger:2}, {s:3,f:2,finger:3}],
-        'Em': [{s:6,f:0,finger:0,isRoot:true}, {s:5,f:2,finger:2}, {s:4,f:2,finger:3}]
+createApp({
+  data() {
+    return {
+      loginForm: { username: '', password: '' },
+      loginError: '',
+      user: {
+        isLoggedIn: false,
+        role: '',
+        level: 0,
+        completedLessons: []
+      },
+      settings: {
+        logoUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=300&q=80',
+        introTitle: '從拿琴到彈唱，十堂課帶你穩穩上手吉他',
+        introText: '這是一套專為初學者設計的入門課程。\n你會從最基本的認識吉他、調音、六線譜開始，逐步學到音階、和弦、節奏與彈唱。\n每完成一堂課，都會獲得新的等級稱號，讓學習更有成就感。',
+        instagram: '',
+        facebook: ''
+      },
+      metronome: {
+        bpm: 80,
+        isPlaying: false,
+        timer: null,
+        audioCtx: null
+      },
+      selectedLessonId: 1,
+      levelUp: {
+        show: false,
+        level: 0,
+        title: '',
+        lessonId: 0
+      },
+      levels: {
+        1: '拿著木棒的平民',
+        2: '六線譜解碼員',
+        3: '生日快樂吟遊詩人',
+        4: '和弦採集專家',
+        5: '大指揮家',
+        6: '節奏諸侯',
+        7: '指彈潛行者',
+        8: '混沌狙擊手',
+        9: '江湖浪人',
+        10: '誰家的大將軍 如此勇猛'
+      },
+      lessons: [
+        { id: 1, title: '認識吉他與基礎入門', shortDescription: '學會認識吉他、正確拿法、調音與音名基礎。', description: '認識吉他、吉他拿法、調音、調音軟體、爬格子、音名介紹', pages: 'p1 ~ p4', video: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g', handout: '#'},
+        { id: 2, title: '音階與六線譜入門', shortDescription: '開始練習爬音階，理解節拍器與六線譜。', description: '爬音階、節拍器、學習看六線譜、小蜜蜂、倫敦鐵橋', pages: 'p5 ~ p10', video: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk', handout: '#'},
+        { id: 3, title: '基礎曲目與和弦開始', shortDescription: '練習生日快樂與春神來了，開始接觸 C、G7 和弦。', description: '生日快樂、春神來了、C和弦、G7和弦、小蜜蜂、倫敦鐵橋', pages: 'p10 ~ p12', video: 'https://www.youtube.com/watch?v=fRh_vgS2dFE', handout: '#'},
+        { id: 4, title: '和弦擴充與寶貝', shortDescription: '加入 Em7/B、Fmaj7、F、Am7 等和弦應用。', description: 'Em7/B、Fmaj7、F、Am7和弦、寶貝', pages: 'p12 ~ p13', video: 'https://www.youtube.com/watch?v=OPf0YbXqDm0', handout: '#'},
+        { id: 5, title: '和弦刷法進階', shortDescription: '學習 G 和弦、生日快樂和弦版與基本刷法。', description: '生日快樂和弦、G和弦、Pick下上下上、春神來了和弦、和弦表二', pages: 'p11、p14', video: 'https://www.youtube.com/watch?v=JGwWNGJdvx8', handout: '#'},
+        { id: 6, title: '慢靈魂節奏', shortDescription: '建立穩定的節奏感，開始慢靈魂練習。', description: '慢靈魂節奏', pages: 'p5 ~ p16', video: 'https://www.youtube.com/watch?v=60ItHLz5WEA', handout: '#'},
+        { id: 7, title: '慢靈魂指法與擁抱', shortDescription: '練習 T1213121、T123121、T132 等指法與歌曲應用。', description: '慢靈魂樂指法、T1213121、T123121、T132、Em和弦、Dm7和弦、擁抱', pages: 'p17', video: 'https://www.youtube.com/watch?v=09R8_2nJtjg', handout: '#'},
+        { id: 8, title: '可不可以與根音概念', shortDescription: '學習 T121、根音與慢靈魂刷法搭配歌曲。', description: '可不可以、T121、根音、T1 23 1、慢靈魂刷法', pages: 'p18', video: 'https://www.youtube.com/watch?v=lp-EO5I60KA', handout: '#'},
+        { id: 9, title: '慢搖滾與浪人情歌', shortDescription: '進入慢搖滾風格，練習完整歌曲段落。', description: '慢搖滾、浪人情歌', pages: 'p19 ~ p21', video: 'https://www.youtube.com/watch?v=hT_nvWreIhg', handout: '#'},
+        { id: 10, title: '民謠搖滾總整與小手拉大手', shortDescription: '整合和弦表 3、民謠搖滾節奏與完整歌曲應用。', description: '和弦表3、民謠搖滾節奏、小手拉大手', pages: 'p22 ~ p27', video: 'https://www.youtube.com/watch?v=RgKAFK5djSk', handout: '#'}
+      ]
     };
-
-    createApp({
-        data() {
-            return {
-                loginForm: { username: '', password: '' },
-                user: { isLoggedIn: false, role: '', xp: 0, badges: [] },
-                lessons: [],
-                credentials: { teacher: {username: 'admin', password: '1234'}, student: {username: 'student', password: '1234'} },
-                settings: { logoUrl: './logo.png' },
-                currentLessonIndex: 0,
-                newComment: '',
-                tempHomework: { link: '', note: '' },
-                showMetronome: false,
-                metronome: { bpm: 80, isPlaying: false, currentBeat: 0, timer: null, ctx: null },
-                
-                // 和弦相關
-                showChordModal: false,
-                isEditingChord: false, // 是否正在編輯
-                customChords: {}, // 存儲老師自訂的和弦
-                chord: { root: 'C', suffix: '' },
-                chordRoots: ['C','D','E','F','G','A','B'],
-                chordSuffixes: [{val:'',name:'Major'}, {val:'m',name:'minor'}, {val:'7',name:'7'}],
-                badges: BADGES
-            }
-        },
-        computed: {
-            currentLesson() {
-                const l = this.lessons[this.currentLessonIndex];
-                if(l && !l.homework) l.homework = { hasSubmission: false };
-                return l || {};
-            },
-            userLevel() {
-                const level = Math.floor(this.user.xp / 100) + 1;
-                const progress = this.user.xp % 100;
-                return { level, progress, nextLevelXp: level * 100 + 100 };
-            },
-            currentChordDots() {
-                const key = this.chord.root + this.chord.suffix;
-                // 優先使用自訂，沒有則用預設，再沒有則回傳空
-                return this.customChords[key] || DEFAULT_CHORDS[key] || [];
-            }
-        },
-        mounted() {
-            const savedData = localStorage.getItem('frankGuitar_v9_data');
-            
-            // 1. 初始化課程
-            this.lessons = lessonsData.map(l => ({
-                ...l,
-                comments: [],
-                homework: { hasSubmission: false, link: "", note: "", date: "", isGraded: false, teacherGrade: "", teacherFeedback: "" },
-                isViewed: false
-            }));
-
-            // 2. 載入存檔
-            if(savedData) {
-                const parsed = JSON.parse(savedData);
-                this.user.xp = parsed.xp || 0;
-                this.user.badges = parsed.badges || [];
-                // 載入自訂和弦
-                this.customChords = parsed.customChords || {}; 
-                
-                if(parsed.userLessonsProgress) {
-                    parsed.userLessonsProgress.forEach((p, i) => {
-                        if(this.lessons[i]) {
-                            this.lessons[i].isViewed = p.isViewed;
-                            this.lessons[i].homework = p.homework;
-                            this.lessons[i].comments = p.comments;
-                        }
-                    });
-                }
-            } else {
-                // 如果沒有存檔，初始化 customChords 為空 (會自動用預設)
-                this.customChords = {};
-            }
-        },
-        methods: {
-            handleLogin() {
-                const { username, password } = this.loginForm;
-                if (username === this.credentials.teacher.username && password === this.credentials.teacher.password) {
-                    this.user = { ...this.user, isLoggedIn: true, role: 'teacher' };
-                } else if (username === this.credentials.student.username && password === this.credentials.student.password) {
-                    this.user = { ...this.user, isLoggedIn: true, role: 'student' };
-                } else {
-                    alert('帳號或密碼錯誤！');
-                }
-            },
-            logout() {
-                this.user.isLoggedIn = false;
-                this.loginForm = { username: '', password: '' };
-                this.stopMetronome();
-            },
-            saveData() {
-                const userLessonsProgress = this.lessons.map(l => ({
-                    isViewed: l.isViewed,
-                    homework: l.homework,
-                    comments: l.comments
-                }));
-                const dataToSave = {
-                    xp: this.user.xp,
-                    badges: this.user.badges,
-                    userLessonsProgress: userLessonsProgress,
-                    customChords: this.customChords // 儲存老師編輯的和弦
-                };
-                localStorage.setItem('frankGuitar_v9_data', JSON.stringify(dataToSave));
-                this.checkBadges();
-            },
-            
-            // --- 和弦編輯功能 ---
-            toggleChordEdit() {
-                this.isEditingChord = !this.isEditingChord;
-                if(!this.isEditingChord) {
-                    this.saveData(); // 關閉編輯時存檔
-                    alert('和弦設定已儲存 (本地)！');
-                }
-            },
-            handleFretClick(string, fret) {
-                if (!this.isEditingChord) return;
-                
-                const key = this.chord.root + this.chord.suffix;
-                // 如果該和弦還沒自訂過，先複製預設值
-                if (!this.customChords[key]) {
-                    this.customChords[key] = JSON.parse(JSON.stringify(DEFAULT_CHORDS[key] || []));
-                }
-                
-                const dots = this.customChords[key];
-                const existingIndex = dots.findIndex(d => d.s === string && d.f === fret);
-                
-                if (existingIndex !== -1) {
-                    // 已存在：循環指法 1->2->3->4->移除
-                    if (dots[existingIndex].finger < 4) {
-                        dots[existingIndex].finger++;
-                    } else {
-                        dots.splice(existingIndex, 1);
-                    }
-                } else {
-                    // 不存在：新增 (預設指法1)
-                    dots.push({ s: string, f: fret, finger: 1, isRoot: false });
-                }
-            },
-            handleFretRightClick(string, fret) {
-                if (!this.isEditingChord) return;
-                const key = this.chord.root + this.chord.suffix;
-                if (!this.customChords[key]) {
-                    this.customChords[key] = JSON.parse(JSON.stringify(DEFAULT_CHORDS[key] || []));
-                }
-                const dots = this.customChords[key];
-                const dot = dots.find(d => d.s === string && d.f === fret);
-                if (dot) {
-                    dot.isRoot = !dot.isRoot; // 切換根音狀態
-                }
-            },
-
-            // ... 其他方法保持不變 (selectLesson, submitHomework, Metronome etc.) ...
-            selectLesson(index) {
-                this.currentLessonIndex = index;
-                this.tempHomework = { link: '', note: '' };
-                if(!this.lessons[index].isViewed && this.user.role === 'student') {
-                    this.lessons[index].isViewed = true;
-                    this.addXp(10);
-                }
-            },
-            addXp(amount) { this.user.xp += amount; this.saveData(); },
-            checkBadges() {
-                const viewedCount = this.lessons.filter(l => l.isViewed).length;
-                const hwCount = this.lessons.filter(l => l.homework && l.homework.hasSubmission).length;
-                const award = (id) => { if(!this.user.badges.includes(id)) { this.user.badges.push(id); alert(`🎉 徽章獲得：${BADGES.find(b=>b.id===id).name}`); } }
-                if(viewedCount >= 5) award('novice'); if(hwCount >= 5) award('homework_king');
-                if(viewedCount >= 30) award('halfway'); if(viewedCount >= 60) award('master');
-            },
-            submitHomework() {
-                if(!this.tempHomework.link) return alert('請輸入連結');
-                const now = new Date();
-                this.currentLesson.homework = { hasSubmission: true, link: this.tempHomework.link, note: this.tempHomework.note, date: `${now.getMonth()+1}/${now.getDate()}`, isGraded: false };
-                this.addXp(50); alert('作業已提交！');
-            },
-            saveHomeworkGrade() { this.currentLesson.homework.isGraded = true; this.saveData(); alert('評分已送出'); },
-            addComment() {
-                if(!this.newComment.trim()) return;
-                const now = new Date();
-                this.currentLesson.comments.push({ user: this.user.role === 'teacher' ? '老師' : '學生', role: this.user.role, text: this.newComment, time: `${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}` });
-                this.newComment = ''; this.saveData();
-            },
-            toggleMetronome() { this.metronome.isPlaying ? this.stopMetronome() : this.startMetronome(); },
-            startMetronome() {
-                if(!this.metronome.ctx) this.metronome.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                this.metronome.isPlaying = true;
-                let nextTime = this.metronome.ctx.currentTime;
-                const schedule = () => { if(!this.metronome.isPlaying) return; while(nextTime < this.metronome.ctx.currentTime + 0.1) { this.playClick(nextTime); this.metronome.currentBeat = (this.metronome.currentBeat % 4) + 1; nextTime += 60.0 / this.metronome.bpm; } this.metronome.timer = requestAnimationFrame(schedule); };
-                schedule();
-            },
-            stopMetronome() { this.metronome.isPlaying = false; cancelAnimationFrame(this.metronome.timer); this.metronome.currentBeat = 0; },
-            playClick(time) { const osc = this.metronome.ctx.createOscillator(); const gain = this.metronome.ctx.createGain(); osc.connect(gain); gain.connect(this.metronome.ctx.destination); osc.frequency.value = (this.metronome.currentBeat === 4) ? 1000 : 800; osc.start(time); osc.stop(time + 0.05); },
-            adjustBpm(val) { this.metronome.bpm = Math.max(40, Math.min(240, this.metronome.bpm + val)); },
-            getEmbedUrl(url) { if (!url) return null; try { const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/; const match = url.match(regex); return match && match[1] ? `https://www.youtube.com/embed/${match[1]}?rel=0` : null; } catch(e) { return null; } },
-            isImage(url) { return url && url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null; }
-        }
-    }).mount('#app');
+  },
+  computed: {
+    currentLesson() {
+      return this.lessons.find(item => item.id === this.selectedLessonId);
+    },
+    completedCount() {
+      return this.user.completedLessons.length;
+    },
+    progressPercent() {
+      return (this.completedCount / 10) * 100;
+    },
+    currentLevelTitle() {
+      return this.user.level > 0 ? `[${this.levels[this.user.level]}]` : '[尚未升級]';
+    }
+  },
+  methods: {
+    setDefaultLogo(event) {
+      event.target.src = 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=300&q=80';
+    },
+    handleLogin() {
+      const { username, password } = this.loginForm;
+      if (username === 'Frank' && password === 'guitar2026') {
+        this.user.isLoggedIn = true;
+        this.user.role = 'teacher';
+        this.loginError = '';
+        this.loadData();
+        return;
+      }
+      if (username === 'Guitar' && password === 'eadgbe') {
+        this.user.isLoggedIn = true;
+        this.user.role = 'student';
+        this.loginError = '';
+        this.loadData();
+        return;
+      }
+      this.loginError = '帳號或密碼錯誤，請重新輸入。';
+    },
+    logout() {
+      this.stopMetronome();
+      this.user.isLoggedIn = false;
+      this.user.role = '';
+      this.loginForm.username = '';
+      this.loginForm.password = '';
+      this.loginError = '';
+    },
+    loadData() {
+      const savedSettings = localStorage.getItem('frank-guitar-settings-v2');
+      const savedLessons = localStorage.getItem('frank-guitar-lessons-v2');
+      const savedProgress = localStorage.getItem('frank-guitar-student-progress-v2');
+      if (savedSettings) this.settings = JSON.parse(savedSettings);
+      if (savedLessons) this.lessons = JSON.parse(savedLessons);
+      if (savedProgress) {
+        const progress = JSON.parse(savedProgress);
+        this.user.completedLessons = progress.completedLessons || [];
+        this.user.level = progress.level || 0;
+      } else {
+        this.user.completedLessons = [];
+        this.user.level = 0;
+      }
+      this.selectedLessonId = 1;
+    },
+    saveSettings() {
+      localStorage.setItem('frank-guitar-settings-v2', JSON.stringify(this.settings));
+      localStorage.setItem('frank-guitar-lessons-v2', JSON.stringify(this.lessons));
+      alert('已儲存設定與課程內容。');
+    },
+    selectLesson(id) {
+      if (this.canAccessLesson(id)) this.selectedLessonId = id;
+    },
+    isLessonCompleted(id) {
+      return this.user.completedLessons.includes(id);
+    },
+    canAccessLesson(id) {
+      if (this.user.role === 'teacher') return true;
+      if (id === 1) return true;
+      return this.user.completedLessons.includes(id - 1) || this.user.completedLessons.includes(id);
+    },
+    canCompleteLesson(id) {
+      if (this.user.role !== 'student') return false;
+      if (this.isLessonCompleted(id)) return false;
+      if (id === 1) return true;
+      return this.isLessonCompleted(id - 1);
+    },
+    completeLesson(id) {
+      if (!this.canCompleteLesson(id)) return;
+      this.user.completedLessons.push(id);
+      this.user.completedLessons.sort((a,b)=>a-b);
+      this.user.level = Math.max(this.user.level, id);
+      localStorage.setItem('frank-guitar-student-progress-v2', JSON.stringify({
+        completedLessons: this.user.completedLessons,
+        level: this.user.level
+      }));
+      this.levelUp = {
+        show: true,
+        level: id,
+        title: `[${this.levels[id]}]`,
+        lessonId: id
+      };
+    },
+    youtubeEmbed(url) {
+      if (!url) return '';
+      let videoId = '';
+      if (url.includes('youtube.com/watch?v=')) {
+        videoId = url.split('v=')[1].split('&')[0];
+      } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1].split('?')[0];
+      } else if (url.includes('youtube.com/embed/')) {
+        videoId = url.split('embed/')[1].split('?')[0];
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+    },
+    toggleMetronome() {
+      if (this.metronome.isPlaying) {
+        this.stopMetronome();
+      } else {
+        this.startMetronome();
+      }
+    },
+    startMetronome() {
+      if (!this.metronome.audioCtx) {
+        this.metronome.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      this.metronome.isPlaying = true;
+      const tick = () => {
+        if (!this.metronome.isPlaying) return;
+        const ctx = this.metronome.audioCtx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 1000;
+        gain.gain.value = 0.08;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+        this.metronome.timer = setTimeout(tick, 60000 / Number(this.metronome.bpm));
+      };
+      tick();
+    },
+    stopMetronome() {
+      this.metronome.isPlaying = false;
+      if (this.metronome.timer) {
+        clearTimeout(this.metronome.timer);
+        this.metronome.timer = null;
+      }
+    }
+  },
+  beforeUnmount() {
+    this.stopMetronome();
+  }
+}).mount('#app');
 </script>
 </body>
 </html>
