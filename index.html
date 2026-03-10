@@ -28,6 +28,7 @@
       background-size: 24px 24px;
     }
     input[type=range] { accent-color: #f59e0b; }
+    /* 用於隱藏捲軸但保持功能 */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
@@ -117,15 +118,6 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-          <div class="flex items-center gap-2 mr-2">
-            <a v-if="settings.instagram" :href="settings.instagram" target="_blank" class="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white shadow-md hover:scale-110 transition">
-              <span class="font-bold text-xs">IG</span>
-            </a>
-            <a v-if="settings.facebook" :href="settings.facebook" target="_blank" class="flex items-center justify-center w-10 h-10 rounded-full bg-[#1877F2] text-white shadow-md hover:scale-110 transition">
-              <span class="font-bold text-xs">FB</span>
-            </a>
-          </div>
-
           <div class="rounded-2xl bg-slate-100 px-4 py-2 text-sm">
             目前身分：<span class="font-bold">{{ user.role === 'teacher' ? '老師' : '學生' }}</span>
           </div>
@@ -185,6 +177,7 @@
               <h3 class="text-xl font-black">節拍器</h3>
               <span class="text-sm text-slate-500">練習專注節奏感</span>
             </div>
+
             <div class="flex items-end justify-between gap-4">
               <div>
                 <div class="text-slate-500 text-sm">BPM</div>
@@ -194,10 +187,12 @@
                 {{ metronome.isPlaying ? '停止' : '開始' }}
               </button>
             </div>
+
             <input type="range" min="40" max="220" v-model="metronome.bpm" class="w-full mt-5">
             <div class="flex justify-between text-xs text-slate-400 mt-1">
               <span>40</span><span>220</span>
             </div>
+
             <div class="grid grid-cols-4 gap-2 mt-5">
               <button v-for="preset in [60,80,100,120]" :key="preset" @click="metronome.bpm = preset" class="rounded-xl bg-slate-100 py-2 text-sm hover:bg-amber-50 hover:text-amber-700">
                 {{ preset }} BPM
@@ -240,11 +235,11 @@
             <div class="space-y-4">
               <div>
                 <label class="text-sm text-slate-500">Instagram 連結</label>
-                <input v-model="settings.instagram" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="https://www.instagram.com/...">
+                <input v-model="settings.instagram" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
               </div>
               <div>
                 <label class="text-sm text-slate-500">Facebook 連結</label>
-                <input v-model="settings.facebook" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="https://www.facebook.com/...">
+                <input v-model="settings.facebook" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
               </div>
             </div>
           </div>
@@ -257,8 +252,19 @@
             <h3 class="text-2xl font-black">課程目錄</h3>
             <span class="text-sm text-slate-500">Week 1 - 10</span>
           </div>
+
           <div class="mt-5 space-y-3">
-            <button v-for="lesson in lessons" :key="lesson.id" @click="selectLesson(lesson.id)" :disabled="!canAccessLesson(lesson.id)" class="w-full text-left rounded-2xl border p-4 transition card-hover" :class="[selectedLessonId === lesson.id ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white', !canAccessLesson(lesson.id) ? 'locked cursor-not-allowed' : '']">
+            <button
+              v-for="lesson in lessons"
+              :key="lesson.id"
+              @click="selectLesson(lesson.id)"
+              :disabled="!canAccessLesson(lesson.id)"
+              class="w-full text-left rounded-2xl border p-4 transition card-hover"
+              :class="[
+                selectedLessonId === lesson.id ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white',
+                !canAccessLesson(lesson.id) ? 'locked cursor-not-allowed' : ''
+              ]"
+            >
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <div class="text-xs uppercase tracking-wider text-slate-400">Week {{ lesson.id }}</div>
@@ -274,28 +280,66 @@
         <section class="rounded-[28px] bg-white p-6 shadow-soft" v-if="currentLesson">
           <div class="flex flex-col 2xl:flex-row 2xl:items-start justify-between gap-6">
             <div>
-              <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 text-amber-700 px-4 py-2 text-sm font-bold">Week {{ currentLesson.id }}</div>
+              <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 text-amber-700 px-4 py-2 text-sm font-bold">
+                Week {{ currentLesson.id }}
+              </div>
               <h2 class="text-3xl font-black mt-4">{{ currentLesson.title }}</h2>
               <p class="text-slate-600 leading-8 mt-4 whitespace-pre-line">{{ currentLesson.description }}</p>
             </div>
             <div class="rounded-3xl bg-slate-50 p-5 min-w-[280px]">
               <div class="text-sm text-slate-500">本課講義頁數</div>
               <div class="text-2xl font-black mt-1">{{ currentLesson.pages }}</div>
-              <a :href="currentLesson.handout" target="_blank" class="mt-4 inline-flex items-center justify-center w-full rounded-2xl bg-slate-900 text-white px-4 py-3 font-bold hover:bg-slate-700 transition">下載講義</a>
+              <a :href="currentLesson.handout" target="_blank" class="mt-4 inline-flex items-center justify-center w-full rounded-2xl bg-slate-900 text-white px-4 py-3 font-bold hover:bg-slate-700 transition">
+                下載講義
+              </a>
             </div>
           </div>
+
           <div class="mt-6 video-wrap shadow-soft">
             <iframe :src="youtubeEmbed(currentLesson.video)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
           </div>
+
           <div class="mt-6 rounded-3xl bg-slate-50 p-5">
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <h3 class="font-black text-xl">課程操作</h3>
                 <p class="text-slate-500 text-sm mt-1">看影片、下載講義、完成課程升級</p>
               </div>
-              <button v-if="user.role === 'student'" @click="completeLesson(currentLesson.id)" :disabled="!canCompleteLesson(currentLesson.id)" class="rounded-2xl px-5 py-3 text-white font-bold transition" :class="canCompleteLesson(currentLesson.id) ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-300 cursor-not-allowed'">
+              <button
+                v-if="user.role === 'student'"
+                @click="completeLesson(currentLesson.id)"
+                :disabled="!canCompleteLesson(currentLesson.id)"
+                class="rounded-2xl px-5 py-3 text-white font-bold transition"
+                :class="canCompleteLesson(currentLesson.id) ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-300 cursor-not-allowed'"
+              >
                 {{ isLessonCompleted(currentLesson.id) ? '本課已完成' : '完成本課並升級' }}
               </button>
+            </div>
+          </div>
+
+          <div v-if="user.role === 'teacher'" class="mt-6 rounded-3xl border border-slate-200 p-5">
+            <h3 class="text-xl font-black mb-4">編輯本課內容</h3>
+            <div class="grid lg:grid-cols-2 gap-4">
+              <div class="lg:col-span-2">
+                <label class="text-sm text-slate-500">課程標題</label>
+                <input v-model="currentLesson.title" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div class="lg:col-span-2">
+                <label class="text-sm text-slate-500">課程說明</label>
+                <textarea v-model="currentLesson.description" rows="5" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"></textarea>
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">YouTube 連結</label>
+                <input v-model="currentLesson.video" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">講義下載連結</label>
+                <input v-model="currentLesson.handout" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
+              <div>
+                <label class="text-sm text-slate-500">頁數顯示</label>
+                <input v-model="currentLesson.pages" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              </div>
             </div>
           </div>
         </section>
@@ -312,6 +356,44 @@
       <button @click="levelUp.show = false" class="mt-6 rounded-2xl bg-slate-900 text-white px-6 py-3 font-bold">我知道了</button>
     </div>
   </div>
+
+  <div v-if="showPromo" class="fixed inset-0 z-[60] bg-slate-100 flex flex-col items-center overflow-y-auto no-scrollbar">
+    <div class="max-w-4xl w-full p-6 md:p-12">
+      <button @click="showPromo = false" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-slate-800 transition font-bold">
+        <span>← 返回登入頁</span>
+      </button>
+      
+      <div class="text-center mb-12">
+        <h2 class="text-4xl md:text-5xl font-black text-slate-900 mb-6">歡迎來到Frank吉他教室</h2>
+        <div class="text-xl leading-relaxed text-slate-600 space-y-4 max-w-2xl mx-auto">
+          <p>這是針對零基礎初學者提供的十堂線上課程。</p>
+          <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 my-8 text-slate-800">
+            <p class="font-bold text-2xl mb-4 text-orange-600">🎸 新手大禮包內容：</p>
+            <ul class="space-y-2 font-bold">
+              <li>• 十堂精選線上課程</li>
+              <li>• 全套課程專屬講義</li>
+              <li>• 入門吉他一把 (限時贈送)</li>
+              <li>• 必備配件組一套</li>
+            </ul>
+            <div class="mt-6 pt-6 border-t border-amber-200">
+              <span class="line-through text-slate-400 mr-3 text-lg">市價 $9,000</span>
+              <span class="text-3xl font-black text-rose-600 italic underline">早鳥限定價 $2,990!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-center bg-white rounded-3xl shadow-2xl p-4 overflow-hidden mb-12">
+        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScRUS1piiwwwM-4ybliNUAghUEK1rDflmVZUJQk1OqeJCLuMg/viewform?embedded=true" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0">載入中…</iframe>
+      </div>
+      
+      <div class="text-center pb-20">
+        <button @click="showPromo = false" class="rounded-2xl bg-slate-900 text-white px-10 py-4 text-lg font-bold shadow-lg hover:bg-slate-700 transition">
+          完成填寫，返回首頁
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -322,7 +404,7 @@ createApp({
     return {
       loginForm: { username: '', password: '' },
       loginError: '',
-      showPromo: false,
+      showPromo: false, // 控制報名頁面顯示
       user: {
         isLoggedIn: false,
         role: '',
@@ -330,16 +412,26 @@ createApp({
         completedLessons: []
       },
       settings: {
-        // --- 1. 修改此處的 logoUrl ---
-        logoUrl: 'logo.png', 
+        // 請在此處貼上您 GitHub 的 Logo 連結
+        logoUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=300&q=80',
         introTitle: 'Frank老師 - 給初學者的十堂吉他課',
         introText: '這是一套專為初學者設計的入門課程。\n你會從最基本的認識吉他、調音、六線譜開始，逐步學到音階、和弦、節奏與彈唱。\n每完成一堂課，都會獲得新的等級稱號，讓我們一起升級吧!',
         instagram: '',
         facebook: ''
       },
-      metronome: { bpm: 80, isPlaying: false, timer: null, audioCtx: null },
+      metronome: {
+        bpm: 80,
+        isPlaying: false,
+        timer: null,
+        audioCtx: null
+      },
       selectedLessonId: 1,
-      levelUp: { show: false, level: 0, title: '', lessonId: 0 },
+      levelUp: {
+        show: false,
+        level: 0,
+        title: '',
+        lessonId: 0
+      },
       levels: {
         1: '拿著木棒的平民',
         2: '六線譜解碼員',
@@ -367,24 +459,49 @@ createApp({
     };
   },
   computed: {
-    currentLesson() { return this.lessons.find(item => item.id === this.selectedLessonId); },
-    completedCount() { return this.user.completedLessons.length; },
-    progressPercent() { return (this.completedCount / 10) * 100; },
-    currentLevelTitle() { return this.user.level > 0 ? `[${this.levels[this.user.level]}]` : '[尚未升級]'; }
+    currentLesson() {
+      return this.lessons.find(item => item.id === this.selectedLessonId);
+    },
+    completedCount() {
+      return this.user.completedLessons.length;
+    },
+    progressPercent() {
+      return (this.completedCount / 10) * 100;
+    },
+    currentLevelTitle() {
+      return this.user.level > 0 ? `[${this.levels[this.user.level]}]` : '[尚未升級]';
+    }
   },
   methods: {
-    setDefaultLogo(event) { event.target.src = 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=300&q=80'; },
+    setDefaultLogo(event) {
+      event.target.src = 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=300&q=80';
+    },
     handleLogin() {
       const { username, password } = this.loginForm;
       if (username === 'Frank' && password === 'guitar2026') {
-        this.user.isLoggedIn = true; this.user.role = 'teacher'; this.loginError = ''; this.loadData(); return;
+        this.user.isLoggedIn = true;
+        this.user.role = 'teacher';
+        this.loginError = '';
+        this.loadData();
+        return;
       }
       if (username === 'Guitar' && password === 'eadgbe') {
-        this.user.isLoggedIn = true; this.user.role = 'student'; this.loginError = ''; this.loadData(); return;
+        this.user.isLoggedIn = true;
+        this.user.role = 'student';
+        this.loginError = '';
+        this.loadData();
+        return;
       }
       this.loginError = '帳號或密碼錯誤，請重新輸入。';
     },
-    logout() { this.stopMetronome(); this.user.isLoggedIn = false; this.user.role = ''; this.loginForm.username = ''; this.loginForm.password = ''; this.loginError = ''; },
+    logout() {
+      this.stopMetronome();
+      this.user.isLoggedIn = false;
+      this.user.role = '';
+      this.loginForm.username = '';
+      this.loginForm.password = '';
+      this.loginError = '';
+    },
     loadData() {
       const savedSettings = localStorage.getItem('frank-guitar-settings-v2');
       const savedLessons = localStorage.getItem('frank-guitar-lessons-v2');
@@ -395,6 +512,9 @@ createApp({
         const progress = JSON.parse(savedProgress);
         this.user.completedLessons = progress.completedLessons || [];
         this.user.level = progress.level || 0;
+      } else {
+        this.user.completedLessons = [];
+        this.user.level = 0;
       }
       this.selectedLessonId = 1;
     },
@@ -403,8 +523,12 @@ createApp({
       localStorage.setItem('frank-guitar-lessons-v2', JSON.stringify(this.lessons));
       alert('已儲存設定與課程內容。');
     },
-    selectLesson(id) { if (this.canAccessLesson(id)) this.selectedLessonId = id; },
-    isLessonCompleted(id) { return this.user.completedLessons.includes(id); },
+    selectLesson(id) {
+      if (this.canAccessLesson(id)) this.selectedLessonId = id;
+    },
+    isLessonCompleted(id) {
+      return this.user.completedLessons.includes(id);
+    },
     canAccessLesson(id) {
       if (this.user.role === 'teacher') return true;
       if (id === 1) return true;
@@ -421,33 +545,67 @@ createApp({
       this.user.completedLessons.push(id);
       this.user.completedLessons.sort((a,b)=>a-b);
       this.user.level = Math.max(this.user.level, id);
-      localStorage.setItem('frank-guitar-student-progress-v2', JSON.stringify({ completedLessons: this.user.completedLessons, level: this.user.level }));
-      this.levelUp = { show: true, level: id, title: `[${this.levels[id]}]`, lessonId: id };
+      localStorage.setItem('frank-guitar-student-progress-v2', JSON.stringify({
+        completedLessons: this.user.completedLessons,
+        level: this.user.level
+      }));
+      this.levelUp = {
+        show: true,
+        level: id,
+        title: `[${this.levels[id]}]`,
+        lessonId: id
+      };
     },
     youtubeEmbed(url) {
       if (!url) return '';
       let videoId = '';
-      if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
-      else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
+      if (url.includes('youtube.com/watch?v=')) {
+        videoId = url.split('v=')[1].split('&')[0];
+      } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1].split('?')[0];
+      } else if (url.includes('youtube.com/embed/')) {
+        videoId = url.split('embed/')[1].split('?')[0];
+      }
       return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
     },
-    toggleMetronome() { this.metronome.isPlaying ? this.stopMetronome() : this.startMetronome(); },
+    toggleMetronome() {
+      if (this.metronome.isPlaying) {
+        this.stopMetronome();
+      } else {
+        this.startMetronome();
+      }
+    },
     startMetronome() {
-      if (!this.metronome.audioCtx) this.metronome.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!this.metronome.audioCtx) {
+        this.metronome.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
       this.metronome.isPlaying = true;
       const tick = () => {
         if (!this.metronome.isPlaying) return;
-        const ctx = this.metronome.audioCtx; const osc = ctx.createOscillator(); const gain = ctx.createGain();
-        osc.type = 'square'; osc.frequency.value = 1000; gain.gain.value = 0.08;
-        osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.05);
+        const ctx = this.metronome.audioCtx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 1000;
+        gain.gain.value = 0.08;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
         this.metronome.timer = setTimeout(tick, 60000 / Number(this.metronome.bpm));
       };
       tick();
     },
     stopMetronome() {
       this.metronome.isPlaying = false;
-      if (this.metronome.timer) { clearTimeout(this.metronome.timer); this.metronome.timer = null; }
+      if (this.metronome.timer) {
+        clearTimeout(this.metronome.timer);
+        this.metronome.timer = null;
+      }
     }
+  },
+  beforeUnmount() {
+    this.stopMetronome();
   }
 }).mount('#app');
 </script>
