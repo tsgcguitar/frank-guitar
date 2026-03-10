@@ -411,14 +411,18 @@ createApp({
         level: 0,
         completedLessons: []
       },
-      settings: {
-        // 請在此處貼上您 GitHub 的 Logo 連結
-        logoUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=300&q=80',
+     settings: {
+        // --- 1. Logo 填寫處 (在此處更換你的 Logo 網址) ---
+        logoUrl: "https://raw.githubusercontent.com/tsgcguitar/frank-guitar/main/logo.png", 
+        
         introTitle: 'Frank老師 - 給初學者的十堂吉他課',
         introText: '這是一套專為初學者設計的入門課程。\n你會從最基本的認識吉他、調音、六線譜開始，逐步學到音階、和弦、節奏與彈唱。\n每完成一堂課，都會獲得新的等級稱號，讓我們一起升級吧!',
-        instagram: '',
-        facebook: ''
+        
+        // --- 2. FB/IG 連結預設值 (在此處填寫網址，學生登入後就會出現對應按鈕) ---
+        instagram: 'https://www.instagram.com/', 
+        facebook: 'https://www.facebook.com/'
       },
+
       metronome: {
         bpm: 80,
         isPlaying: false,
@@ -611,3 +615,4 @@ createApp({
 </script>
 </body>
 </html>
+
