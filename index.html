@@ -28,11 +28,13 @@
       background-size: 24px 24px;
     }
     input[type=range] { accent-color: #f59e0b; }
+    /* 用於隱藏捲軸但保持功能 */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
 <div id="app" v-cloak>
-  <!-- Login -->
   <section v-if="!user.isLoggedIn" class="min-h-screen bg-slate-950 text-white relative overflow-hidden">
     <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950"></div>
     <div class="absolute inset-0 hero-grid opacity-30"></div>
@@ -50,26 +52,33 @@
         </h1>
         <p class="text-xl md:text-2xl text-slate-200 mt-4">給初學者的十堂吉他課</p>
         <p class="text-slate-300 mt-6 leading-8 max-w-xl">
-          從拿琴、調音、六線譜，到和弦、音階與節奏，循序漸進學會彈唱。十堂課後你將學會3種曲風、5首經典歌曲。限時贈送吉他，趕快點下方報名吧!
+          從拿琴、調音、六線譜，到和弦、音階與節奏，循序漸進學會彈唱。十堂課後你將學會3種曲風、5首經典歌曲。
         </p>
 
-        <div class="grid sm:grid-cols-3 gap-4 mt-8">
-          <div class="glass rounded-2xl p-4 text-slate-800">
-            <div class="text-sm text-slate-500">課程數量</div>
-            <div class="text-2xl font-bold mt-1">10 堂</div>
+        <div class="grid grid-cols-3 gap-3 mt-8 max-w-md">
+          <div class="glass rounded-xl p-3 text-slate-800 text-center">
+            <div class="text-[10px] text-slate-500 uppercase">課程</div>
+            <div class="text-lg font-bold mt-0.5">10 堂</div>
           </div>
-          <div class="glass rounded-2xl p-4 text-slate-800">
-            <div class="text-sm text-slate-500">適合對象</div>
-            <div class="text-2xl font-bold mt-1">初學者</div>
+          <div class="glass rounded-xl p-3 text-slate-800 text-center">
+            <div class="text-[10px] text-slate-500 uppercase">對象</div>
+            <div class="text-lg font-bold mt-0.5">初學者</div>
           </div>
-          <div class="glass rounded-2xl p-4 text-slate-800">
-            <div class="text-sm text-slate-500">學習方式</div>
-            <div class="text-2xl font-bold mt-1">影片＋講義</div>
+          <div class="glass rounded-xl p-3 text-slate-800 text-center">
+            <div class="text-[10px] text-slate-500 uppercase">方式</div>
+            <div class="text-lg font-bold mt-0.5">影片講義</div>
           </div>
         </div>
 
-        <div class="mt-8 text-sm text-slate-300 leading-7">
-         
+        <div @click="showPromo = true" class="mt-6 p-6 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 cursor-pointer hover:scale-[1.02] transition shadow-xl group">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-bold bg-white/30 inline-block px-2 py-0.5 rounded mb-2">限時優惠禮包</div>
+              <h3 class="text-xl md:text-2xl font-black">立即報名就送吉他與配件</h3>
+              <p class="text-lg font-bold mt-1">早鳥價 <span class="text-3xl font-black text-white">2990</span> !</p>
+            </div>
+            <div class="text-4xl group-hover:translate-x-2 transition">👉</div>
+          </div>
         </div>
       </div>
 
@@ -97,9 +106,7 @@
     </div>
   </section>
 
-  <!-- Main Platform -->
   <section v-else class="min-h-screen">
-    <!-- Topbar -->
     <header class="sticky top-0 z-40 border-b border-white/60 bg-white/80 backdrop-blur-xl">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col lg:flex-row lg:items-center gap-4 lg:justify-between">
         <div class="flex items-center gap-4">
@@ -123,7 +130,6 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <!-- Intro -->
       <section class="grid xl:grid-cols-[1.3fr_.7fr] gap-6">
         <div class="rounded-[28px] bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 text-white p-8 shadow-soft relative overflow-hidden">
           <div class="absolute right-0 top-0 h-44 w-44 rounded-full bg-amber-400/10 blur-3xl"></div>
@@ -196,7 +202,6 @@
         </div>
       </section>
 
-      <!-- Teacher settings -->
       <section v-if="user.role === 'teacher'" class="mt-6 rounded-[28px] bg-white p-6 shadow-soft">
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div>
@@ -211,7 +216,7 @@
             <h4 class="font-bold text-lg mb-4">平台資料</h4>
             <div class="space-y-4">
               <div>
-                <label class="text-sm text-slate-500">登入頁 Logo 圖片網址</label>
+                <label class="text-sm text-slate-500">登入頁 Logo 圖片網址 (可用GitHub連結)</label>
                 <input v-model="settings.logoUrl" type="text" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
               </div>
               <div>
@@ -241,7 +246,6 @@
         </div>
       </section>
 
-      <!-- Lessons -->
       <section class="mt-8 grid xl:grid-cols-[360px_1fr] gap-6">
         <aside class="rounded-[28px] bg-white p-5 shadow-soft h-fit">
           <div class="flex items-center justify-between">
@@ -340,10 +344,9 @@
           </div>
         </section>
       </section>
+    </main>
+  </section>
 
-     
-
-  <!-- Level up modal -->
   <div v-if="levelUp.show" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="max-w-lg w-full rounded-[28px] bg-white p-8 shadow-soft text-center">
       <div class="mx-auto h-20 w-20 rounded-full bg-amber-100 flex items-center justify-center text-4xl">🎸</div>
@@ -351,6 +354,44 @@
       <p class="text-xl text-amber-700 font-bold mt-3">{{ levelUp.title }}</p>
       <p class="text-slate-500 mt-4">你已完成第 {{ levelUp.lessonId }} 課，繼續往下一課前進吧！</p>
       <button @click="levelUp.show = false" class="mt-6 rounded-2xl bg-slate-900 text-white px-6 py-3 font-bold">我知道了</button>
+    </div>
+  </div>
+
+  <div v-if="showPromo" class="fixed inset-0 z-[60] bg-slate-100 flex flex-col items-center overflow-y-auto no-scrollbar">
+    <div class="max-w-4xl w-full p-6 md:p-12">
+      <button @click="showPromo = false" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-slate-800 transition font-bold">
+        <span>← 返回登入頁</span>
+      </button>
+      
+      <div class="text-center mb-12">
+        <h2 class="text-4xl md:text-5xl font-black text-slate-900 mb-6">歡迎來到Frank吉他教室</h2>
+        <div class="text-xl leading-relaxed text-slate-600 space-y-4 max-w-2xl mx-auto">
+          <p>這是針對零基礎初學者提供的十堂線上課程。</p>
+          <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 my-8 text-slate-800">
+            <p class="font-bold text-2xl mb-4 text-orange-600">🎸 新手大禮包內容：</p>
+            <ul class="space-y-2 font-bold">
+              <li>• 十堂精選線上課程</li>
+              <li>• 全套課程專屬講義</li>
+              <li>• 入門吉他一把 (限時贈送)</li>
+              <li>• 必備配件組一套</li>
+            </ul>
+            <div class="mt-6 pt-6 border-t border-amber-200">
+              <span class="line-through text-slate-400 mr-3 text-lg">市價 $9,000</span>
+              <span class="text-3xl font-black text-rose-600 italic underline">早鳥限定價 $2,990!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-center bg-white rounded-3xl shadow-2xl p-4 overflow-hidden mb-12">
+        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScRUS1piiwwwM-4ybliNUAghUEK1rDflmVZUJQk1OqeJCLuMg/viewform?embedded=true" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0">載入中…</iframe>
+      </div>
+      
+      <div class="text-center pb-20">
+        <button @click="showPromo = false" class="rounded-2xl bg-slate-900 text-white px-10 py-4 text-lg font-bold shadow-lg hover:bg-slate-700 transition">
+          完成填寫，返回首頁
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -363,6 +404,7 @@ createApp({
     return {
       loginForm: { username: '', password: '' },
       loginError: '',
+      showPromo: false, // 控制報名頁面顯示
       user: {
         isLoggedIn: false,
         role: '',
@@ -370,6 +412,7 @@ createApp({
         completedLessons: []
       },
       settings: {
+        // 請在此處貼上您 GitHub 的 Logo 連結
         logoUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=300&q=80',
         introTitle: 'Frank老師 - 給初學者的十堂吉他課',
         introText: '這是一套專為初學者設計的入門課程。\n你會從最基本的認識吉他、調音、六線譜開始，逐步學到音階、和弦、節奏與彈唱。\n每完成一堂課，都會獲得新的等級稱號，讓我們一起闖關吧!',
@@ -568,6 +611,3 @@ createApp({
 </script>
 </body>
 </html>
-
-
-
