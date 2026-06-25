@@ -623,6 +623,22 @@ createApp({
   }
 }).mount('#app');
 </script>
+  <script>
+    // 1. 禁用滑鼠右鍵選單
+    document.oncontextmenu = function() { return false; };
+    
+    // 2. 禁用 F12 以及常見的「檢視原始碼/檢查」組合鍵
+    document.onkeydown = function(e) {
+      // 阻擋 F12
+      if (e.keyCode == 123) return false; 
+      // 阻擋 Ctrl+Shift+I (Windows 檢查) 或 Cmd+Option+I (Mac)
+      if (e.ctrlKey && e.shiftKey && e.keyCode == 73) return false; 
+      // 阻擋 Ctrl+Shift+J (Windows 主主控台)
+      if (e.ctrlKey && e.shiftKey && e.keyCode == 74) return false; 
+      // 阻擋 Ctrl+U (Windows 檢視網頁原始碼)
+      if (e.ctrlKey && e.keyCode == 85) return false; 
+    };
+  </script>
 </body>
 </html>
 
