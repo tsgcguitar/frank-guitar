@@ -489,22 +489,25 @@ createApp({
     },
     handleLogin() {
       const { username, password } = this.loginForm;
-      if (username === 'Frank' && password === 'guitar2026') {
-        this.user.isLoggedIn = true;
-        this.user.role = 'teacher';
-        this.loginError = '';
-        this.loadData();
-        return;
-      }
-      if (username === 'Guitar' && password === 'eadgbe') {
-        this.user.isLoggedIn = true;
-        this.user.role = 'student';
-        this.loginError = '';
-        this.loadData();
-        return;
-      }
-      this.loginError = '帳號或通行碼錯誤，請重新輸入。';
-    },
+      const teacherPwdHash = 'Z3VpdGFyMjAyNg=='; 
+      const studentPwdHash = 'ZWFkZ2Jl';
+      
+      if (username === 'Frank' && btoa(password) === teacherPwdHash) {
+    this.user.isLoggedIn = true;
+    this.user.role = 'teacher';
+    this.loginError = '';
+    this.loadData();
+    return;
+  }
+  if (username === 'Guitar' && btoa(password) === studentPwdHash) {
+    this.user.isLoggedIn = true;
+    this.user.role = 'student';
+    this.loginError = '';
+    this.loadData();
+    return;
+  }
+  this.loginError = '帳號或通行碼錯誤，請重新輸入。';
+},
     logout() {
       this.stopMetronome();
       this.user.isLoggedIn = false;
